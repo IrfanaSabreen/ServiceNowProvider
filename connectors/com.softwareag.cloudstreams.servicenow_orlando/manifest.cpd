@@ -1,0 +1,12 @@
+Connector-Bundle-Vendor: Software AG
+Connector-Bundle-Version: 1.0
+Manifest-Version: 1.2
+Connector-Descriptor-File: com.softwareag.cloudstreams.servicenow_orlando.xml
+Connector-Key: com.softwareag.cloudstreams.servicenow_orlando
+Connector-Version: Orlando
+Connector-Provider-Package: WmServiceNowProvider
+Connector-State: Enabled
+Connector-Handler: com.softwareag.cloudstreams.metadata.handler.rest.RestConnectorMetadataHandler
+Connector-Name: ServiceNow Enterprise Service Management
+Connector-Group: ServiceNow
+Created-By: 10.5

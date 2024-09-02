@@ -1,0 +1,2317 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<rest-connector xmlns="http://www.softwareag.com/cloudstreams/metadata/handler/model" id="com.softwareag.cloudstreams.servicenow_orlando" version="Orlando" group="ServiceNow" name="ServiceNow Enterprise Service Management" displayName="ServiceNow Enterprise Service Management">
+    <description>ServiceNow Enterprise Service Management</description>
+     <connections>
+        <connection type="sagcloud" name="Connection1" displayName="Credentials">
+            <groups>
+                <group type="connection" name="connection" displayName="Connection">
+                    <description>Define the required connection configurations to initiate communication with the SaaS provider.</description>
+                    <fields>
+                        <field defaultValue="https://{instance name}.service-now.com" name="cn.providerUrl" displayName="Server URL"/>
+                        <field defaultValue="30000" name="cn.connectTimeout" displayName="Connection TimeOut"/>
+                        <field defaultValue="30000" name="cn.readTimeout" displayName="Socket Read Timeout"/>
+                        <field defaultValue="false" name="cn.socketStaleCheck" displayName="Use Stale Checking"/>
+                        <field defaultValue="4" name="cn.retryCount" displayName="Connection Retry Count"/>
+                        <field defaultValue="true" name="cn.retryIfRequestSentOk" displayName="Retry on Response Failure"/>
+                        <field defaultValue="false" name="cn.tcpNoDelay" displayName="Use TCP NoDelay"/>
+                        <field defaultValue="-1" name="cn.socketLinger" displayName="Socket Linger"/>
+                        <field defaultValue="8192" name="cn.sockBuffSize" displayName="Socket Buffer Size"/>
+                        <field defaultValue="false" name="cn.reuseAddr" displayName="Socket Reuse Address"/>
+                        <field defaultValue="org.apache.http.conn.ssl.StrictHostnameVerifier" name="cn.hostnameVerifier" displayName="Hostname verifier"/>
+                    </fields>
+                </group>
+                <group type="credentials" name="credentials" displayName="Credentials">
+                    <description>Define configurations needed for the username and password based authentication to the SaaS provider.</description>
+                    <fields>
+						<field name="cr.username" isRequired="true"/>
+						<field name="cr.password" isRequired="true"/>
+                        <field defaultValue="true" name="cr.preemptiveAuthEnabled" displayName="Preemptive Auth"/>
+                        <field defaultValue="basic" name="cr.authSchemeType" displayName="Authorization Type"/>
+                    </fields>
+                </group>
+				<group type="connectionManager" displayName="Connection Manager" name="connectionManager">
+					<fields>
+						<field defaultValue="false" name="poolable"/>                
+						<field defaultValue="none" name="timeoutType"/>
+					</fields>
+				</group>
+            </groups>
+            <start/>
+            <stop/>
+        </connection>
+		<connection type="sagcloud_oauth_v20_authorization_code" name="sagcloud_oauth_2_web_server_authentication" displayName="OAuth V2.0 (Authorization Code Flow)">
+			<description>Connection using OAuth 2.0 Web Server Authentication Flow</description>
+			<groups>
+				<group type="connection" name="web_server_authentication" displayName="OAuth 2.0 Web Server Authentication">
+					<description>Define the required connection configurations to initiate communication with the SaaS provider.</description>
+					<fields>
+						<field defaultValue="https://{instance name}.service-now.com" name="cn.providerUrl" displayName="Server URL" />
+					</fields>
+				</group>
+				<group type="oauth_v20_authorization_code" name="oauth_v20_authorization_code" displayName="OAuth V2.0 (Web Server Authentication Flow)">
+					<description>Define configurations needed for the OAuth version 2.0 authentication scheme.</description>
+					<fields>
+						<field name="oauth_v20.scope" displayName="Scope" isHidden="true" defaultValue="" modelType="Meta" />
+						<field name="oauth_v20.authorizationServerUrl" displayName="Authorization Server URL" isHidden="true" modelType="Meta" />
+						<field name="oauth_v20.authenticationServerUrl" displayName="Authentication Server URL" isHidden="true" modelType="Meta" />
+						<field name="oauth_v20.accessTokenRefreshURL" displayName="Refresh URL" isRequired="true" isOverride="true" />
+						<field name="oauth_v20.refreshAccessToken" displayName="Refresh Access Token" defaultValue="true" isRequired="true" isOverride="true"/>
+						<field name="oauth_v20.refreshToken" displayName="Refresh Token" isRequired="true" isOverride="true"/>
+						<field defaultValue="Body Query String" name="oauth_v20.accessTokenRefreshURLRequest" displayName="Refresh URL Request" isOverride="true"/>
+						<field name="cx.grant_type"  defaultValue="refresh_token"  displayName="Grant Type" isRequired="false" isHidden="false"/>													
+					</fields>
+				</group>
+				<group type="connectionManager" displayName="Connection Manager" name="connectionManager">
+					<fields>
+                        <field defaultValue="true" name="poolable"/>                
+						<field defaultValue="1" name="minimumPoolSize"/>
+						<field defaultValue="100" name="maximumPoolSize"/>
+						<field defaultValue="1" name="poolIncrementSize"/>                
+						<field defaultValue="1000" name="blockTimeout"/>
+						<field defaultValue="1000" name="expireTimeout"/>
+						<field defaultValue="0" name="startupRetryCount"/>                
+						<field defaultValue="10" name="startupBackoffSecs"/>
+						<field defaultValue="auto" name="timeoutType"/>
+                    </fields>
+				</group>
+			</groups>
+			<start />
+			<stop />
+		</connection>
+	</connections>
+    <services>
+	
+	<!-- Table -->
+	    <service xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="RESTServiceType" endpoint="${cn.providerUrl}" name="Table" displayName="Table API">
+		
+            <documentModel packageName="WmServiceNowProvider" nsName="wmservicenow.orlando.doctypes.table" useInlineModel="false">
+				<abstractObject type="businessObject" name="record">
+                    <lookup ref="wmservicenow.orlando.lookup:businessObjectList" type="boList" />
+                    <lookup ref="wmservicenow.orlando.lookup:boDescribe" type="boDescribe" />
+                </abstractObject>
+			</documentModel>
+			
+            <resources>
+			
+				<!-- Insert Record -->
+                <resource method="POST" path="/api/now/table/{tableName}" name="insert" displayName="Insert Record" type="COMPLEX">
+					 <description>Inserts a record in the specified table.</description>
+					 
+					<mappings>
+                        <map isRequired="true" isFixed="true" context="IN" name="objectAsParameter" displayName="objectAsParameter">
+                            <source type="PARAMETER">core.businessObject</source>
+                            <target type="PARAMETER">tableName</target>
+                        </map>
+						<map isRequired="true" isFixed="true" context="IN" name="Content-Type_Mapping" displayName="Content-Type_Mapping">
+							<source type="LITERAL">application/json</source>
+							<target type="HEADER">Content-Type</target>
+						</map>
+					</mappings>
+					
+                    <parameters>
+                        <parameter name="tableName" isRequired="true" isFixed="true" style="URI_CONTEXT">
+							<description>Specifies table for which record has to be inserted</description>
+						</parameter>
+						<parameter name="sysparm_display_value" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Return the display value (true), actual value (false), or both (all) for reference fields (default: false)</description>
+						</parameter>
+						<parameter name="sysparm_exclude_reference_link" isRequired="true" isFixed="true" style="QUERYSTRING_PARAM" defaultValue="true">
+							<description>True to exclude Table API links for reference fields</description>
+						</parameter>
+						<parameter name="sysparm_fields" isRequired="true" isFixed="true" style="QUERYSTRING_PARAM" defaultValue="sys_id">
+							<description>A comma-separated list of fields to return in the response</description>
+						</parameter>
+						<parameter name="sysparm_input_display_value" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>True to set raw value of input fields (default: false)</description>
+						</parameter>
+						<parameter name="sysparm_view" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Render the response according to the specified UI view (overridden by sysparm_fields)</description>
+						</parameter>
+                    </parameters>
+					
+                    <request name="insertRequest" messageFormatterType="application/json" builderType="application/octet+idataoref" documentRef="wmservicenow.orlando.doctypes.table:insertRequest" excludeRoot="true"/>
+					
+                    <responses>
+                        <response name="insertResponse" code="200-206" messageFormatterType="application/json" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:createResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" 
+						documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+                    </responses>
+                </resource>
+						
+				<!-- Update Record -->
+				<resource method="PATCH" path="/api/now/table/{tableName}/{sys_id}" name="update" displayName="Update Record" type="COMPLEX">
+					<description>Updates the specified record with the request body.</description>
+					<lookups>       
+						<lookup name="sys_id" ref="wmservicenow.orlando.fieldLookup.table:listAllTableIDs" type="optionsList">  
+							<args>
+								<arg name="businessObject" type="IDATA">core.businessObject</arg>
+							</args>
+						</lookup>				      						
+					</lookups>
+					<mappings>
+                        <map isRequired="true" isFixed="true" context="IN" name="objectAsParameter" displayName="objectAsParameter">
+                            <source type="PARAMETER">core.businessObject</source>
+                            <target type="PARAMETER">tableName</target>
+                        </map>
+						<map isRequired="true" isFixed="true" context="IN" name="Content-Type_Mapping" displayName="Content-Type_Mapping">
+							<source type="LITERAL">application/json</source>
+							<target type="HEADER">Content-Type</target>
+						</map>
+						<map context="IN" isRequired="true" isFixed="true" displayName="sys_id" name="sys_id">
+							<description>Look up for sys_id</description>
+							<source type="LOOKUP">sys_id</source>
+							<target type="PARAMETER">sys_id</target>
+						</map>
+					</mappings>
+					
+					<parameters>
+                        <parameter name="tableName" isRequired="true" isFixed="true" style="URI_CONTEXT">
+							<description>Specifies table for which record has to be Updated</description>
+						</parameter>
+						<parameter name="sys_id" isRequired="true" style="URI_CONTEXT">
+							<description>Unique UUID of record which has to be updated</description>
+						</parameter>
+						<parameter name="sysparm_display_value" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Return the display value (true), actual value (false), or both (all) for reference fields (default: false)</description>
+						</parameter>
+						<parameter name="sysparm_fields" isRequired="true" isFixed="true" style="QUERYSTRING_PARAM" defaultValue="sys_id">
+							<description>A comma-separated list of fields to return in the response</description>
+						</parameter>
+						<parameter name="sysparm_input_display_value" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>True to set raw value of input fields (default: false)</description>
+						</parameter>
+						<parameter name="sysparm_query_no_domain" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>True to include the record even if it is in a domain (default: false)</description>
+						</parameter>
+						<parameter name="sysparm_view" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Render the response according to the specified UI view (overridden by sysparm_fields)</description>
+						</parameter>
+                    </parameters>
+					
+					<request name="updateRequest" messageFormatterType="application/json" builderType="application/octet+idataoref" documentRef="wmservicenow.orlando.doctypes.table:updateRequest" excludeRoot="true"/>
+					
+                    <responses>
+                        <response name="updateResponse" code="200-206" messageFormatterType="application/json" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:createResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" 
+						documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+                    </responses>
+				
+				</resource>
+						
+				<!-- Modify Record -->
+				<resource method="PUT" path="/api/now/table/{tableName}/{sys_id}" name="modify" displayName="Modify Record" type="COMPLEX">
+					<description>Updates the specified record with the request body.</description>
+					<lookups>       
+						<lookup name="sys_id" ref="wmservicenow.orlando.fieldLookup.table:listAllTableIDs" type="optionsList">  
+							<args>
+								<arg name="businessObject" type="IDATA">core.businessObject</arg>
+							</args>
+						</lookup>				      						
+					</lookups> 
+					<mappings>
+                        <map isRequired="true" isFixed="true" context="IN" name="objectAsParameter" displayName="objectAsParameter">
+                            <source type="PARAMETER">core.businessObject</source>
+                            <target type="PARAMETER">tableName</target>
+                        </map>
+						<map isRequired="true" isFixed="true" context="IN" name="Content-Type_Mapping" displayName="Content-Type_Mapping">
+							<source type="LITERAL">application/json</source>
+							<target type="HEADER">Content-Type</target>
+						</map>
+						<map context="IN" isRequired="true" isFixed="true" displayName="sys_id" name="sys_id">
+							<description>Look up for sys_id</description>
+							<source type="LOOKUP">sys_id</source>
+							<target type="PARAMETER">sys_id</target>
+						</map>
+					</mappings>
+					<parameters>
+                        <parameter name="tableName" isRequired="true" isFixed="true" style="URI_CONTEXT">
+							<description>Specifies table for which record has to be Modified</description>
+						</parameter>
+						<parameter name="sys_id" isRequired="true" style="URI_CONTEXT">
+							<description>Unique UUID of record which has to be Modified</description>
+						</parameter>
+						<parameter name="sysparm_display_value" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Return the display value (true), actual value (false), or both (all) for reference fields (default: false)</description>
+						</parameter>
+						<parameter name="sysparm_exclude_reference_link" isRequired="true" isFixed="true" style="QUERYSTRING_PARAM" defaultValue="true">
+							<description>True to exclude Table API links for reference fields</description>
+						</parameter>
+						<parameter name="sysparm_fields" isRequired="true" isFixed="true" style="QUERYSTRING_PARAM" defaultValue="sys_id">
+							<description>A comma-separated list of fields to return in the response</description>
+						</parameter>
+						<parameter name="sysparm_input_display_value" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>True to set raw value of input fields (default: false)</description>
+						</parameter>
+						<parameter name="sysparm_query_no_domain" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>True to include the record even if it is in a domain (default: false)</description>
+						</parameter>
+						<parameter name="sysparm_view" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Render the response according to the specified UI view (overridden by sysparm_fields)</description>
+						</parameter>
+                    </parameters>
+					
+					<request name="modifyRequest" messageFormatterType="application/json" builderType="application/octet+idataoref" documentRef="wmservicenow.orlando.doctypes.table:modifyRequest" excludeRoot="true"/>
+					
+                    <responses>
+                        <response name="modifyResponse" code="200-206" messageFormatterType="application/json" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:createResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" 
+						documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+                    </responses>
+				
+				</resource>
+						
+				<!-- Delete Record -->
+				<resource method="DELETE" path="/api/now/table/{tableName}/{sys_id}" name="delete" displayName="Delete Record">
+					 <description>Deletes the specified record from the specified table.</description>
+					<lookups>       
+						<lookup name="sys_id" ref="wmservicenow.orlando.fieldLookup.table:listAllTableIDs" type="optionsList">  
+							<args>
+								<arg name="businessObject" type="PARAMETER">tableName</arg>
+							</args>
+						</lookup>
+						<lookup name="businessObjectList" ref="wmservicenow.orlando.lookup:businessObjectList" type="boList"/>	
+					</lookups> 
+					 <mappings>
+						<map isRequired="true" isFixed="true" context="IN" name="Content-Type_Mapping" displayName="Content-Type_Mapping">
+							<source type="LITERAL">application/json</source>
+							<target type="HEADER">Content-Type</target>
+						</map>
+						<map context="IN" isRequired="true" isFixed="true" displayName="sys_id" name="sys_id">
+							<description>Look up for sys_id</description>
+							<source type="LOOKUP">sys_id</source>
+							<target type="PARAMETER">sys_id</target>
+						</map>
+						<map context="IN" isRequired="true" isFixed="true" displayName="Id Lookup Mapping" name="id_lookup_mapping">
+							<description>Look up for ids</description>
+							<source type="LOOKUP">businessObjectList</source>
+							<target type="PARAMETER">tableName</target>
+						</map>
+					</mappings>
+					 <parameters>
+						<parameter name="tableName" isRequired="true" style="URI_CONTEXT">
+							<description>Specifies table from which record has to be deleted</description>
+						</parameter>
+						<parameter name="sys_id" isRequired="true" style="URI_CONTEXT">
+							<description>Unique UUID of record which has to be Deleted</description>
+						</parameter>
+						<parameter name="sysparm_query_no_domain" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>True to include the record even if it is in a domain (default: false)</description>
+						</parameter>
+					 </parameters>
+					 <responses>
+						<response name="deleteResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes:emptyResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+				
+				<!-- Retrieve Single Record -->
+				<resource method="GET" path="/api/now/table/{tableName}/{sys_id}" name="get" displayName="Get Record" type="COMPLEX">
+					<description>Retrieves the record identified by the specified sys_id from the specified table.</description>
+					 <lookups>       
+						<lookup name="sys_id" ref="wmservicenow.orlando.fieldLookup.table:listAllTableIDs" type="optionsList">  
+							<args>
+								<arg name="businessObject" type="IDATA">core.businessObject</arg>
+							</args>
+						</lookup>				      						
+					</lookups> 
+					<mappings>
+                        <map isRequired="true" isFixed="true" context="IN" name="objectAsParameter" displayName="objectAsParameter">
+                            <source type="PARAMETER">core.businessObject</source>
+                            <target type="PARAMETER">tableName</target>
+                        </map>
+						<map context="IN" isRequired="true" isFixed="false" displayName="retrieve Input Mapping" name="retrieve_mapping_input">
+							<description>Set fields</description>
+							<source type="SERVICE">
+								<service nsName="pub.cloudstreams.util.services.map:delimitedString">
+									<hint>core.objectFieldList</hint>
+									<arg name="input">${core.objectFieldList}</arg>
+									<arg name="delimiter">,</arg>
+								</service>
+							</source>
+							<target type="PARAMETER">sysparm_fields</target>
+						</map>
+						<map context="IN" isRequired="true" isFixed="true" displayName="sys_id" name="sys_id">
+							<description>Look up for sys_id</description>
+							<source type="LOOKUP">sys_id</source>
+							<target type="PARAMETER">sys_id</target>
+						</map>
+					</mappings>
+					
+                    <parameters>
+                        <parameter name="tableName" isRequired="true" isFixed="true" style="URI_CONTEXT">
+							<description>Specifies table from which record has to be retrieved</description>
+						</parameter>
+						<parameter name="sys_id" isRequired="true" style="URI_CONTEXT">
+							<description>Unique UUID of record which has to be Retrieved</description>
+						</parameter>
+						<parameter name="sysparm_display_value" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Return the display value (true), actual value (false), or both (all) for reference fields (default: false)</description>
+						</parameter>
+						<parameter name="sysparm_exclude_reference_link" isRequired="true" isFixed="true" style="QUERYSTRING_PARAM" defaultValue="true">
+							<description>True to exclude Table API links for reference fields </description>
+						</parameter>
+						<parameter name="sysparm_fields" isRequired="true" isFixed="false" style="QUERYSTRING_PARAM">
+							<description>A comma-separated list of fields to return in the response</description>
+						</parameter>
+						<parameter name="sysparm_query_no_domain" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>True to include the record even if it is in a domain (default: false)</description>
+						</parameter>
+						<parameter name="sysparm_view" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Render the response according to the specified UI view (overridden by sysparm_fields)</description>
+						</parameter>
+                    </parameters>
+
+                    <responses>
+                        <response name="getResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" 
+						documentRef="wmservicenow.orlando.doctypes.table:getResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" 
+						documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+                    </responses>
+                </resource>
+				
+				<!-- List Records -->
+				<resource method="GET" path="/api/now/table/{tableName}" name="list" displayName="List Records" type="COMPLEX">
+					<description>Retrieves multiple records for the specified table with proper pagination information.</description>
+					<mappings>
+                        <map isRequired="true" isFixed="true" context="IN" name="objectAsParameter" displayName="objectAsParameter">
+                            <source type="PARAMETER">core.businessObject</source>
+                            <target type="PARAMETER">tableName</target>
+                        </map>
+						<map context="IN" isRequired="true" isFixed="false" displayName="retrieve Input Mapping" name="retrieve_mapping_input">
+							<description>Set fields</description>
+							<source type="SERVICE">
+								<service nsName="pub.cloudstreams.util.services.map:delimitedString">
+									<hint>core.objectFieldList</hint>
+									<arg name="input">${core.objectFieldList}</arg>
+									<arg name="delimiter">,</arg>
+								</service>
+							</source>
+							<target type="PARAMETER">sysparm_fields</target>
+						</map>											 
+					</mappings>
+					
+                    <parameters>
+                        <parameter name="tableName" isRequired="true" isFixed="true" style="URI_CONTEXT">
+							<description>Specifies table from which records has to be retrieved</description>
+						</parameter>
+						<parameter name="sysparm_query" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>An encoded query string used to filter the results</description>
+						</parameter>
+						<parameter name="sysparm_display_value" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Return the display value (true), actual value (false), or both (all) for reference fields (default: false)</description>
+						</parameter>
+						<parameter name="sysparm_exclude_reference_link" isRequired="true" isFixed="true" style="QUERYSTRING_PARAM" defaultValue="true">
+							<description>True to exclude Table API links for reference fields</description>
+						</parameter>
+						<parameter name="sysparm_suppress_pagination_header" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>True to supress pagination header (default: false)</description>
+						</parameter>
+						<parameter name="sysparm_fields" isRequired="true" isFixed="false" style="QUERYSTRING_PARAM">
+							<description>A comma-separated list of fields to return in the response</description>
+						</parameter>
+						<parameter name="sysparm_limit" isRequired="true" style="QUERYSTRING_PARAM" defaultValue="250">
+							<description>The maximum number of results returned per page (default: 10,000)</description>
+						</parameter>
+						<parameter name="sysparm_view" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Render the response according to the specified UI view (overridden by sysparm_fields)</description>
+						</parameter>
+						<parameter name="sysparm_offset" isRequired="true" style="QUERYSTRING_PARAM" defaultValue="0">
+							<description>Start index of the row</description>
+						</parameter>
+						<parameter name="sysparm_query_no_domain" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>True to include the record even if it is in a domain (default: false)</description>
+						</parameter>
+                    </parameters>
+
+                    <responses>
+                        <response name="listResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" 
+						documentRef="wmservicenow.orlando.doctypes.table:listResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" 
+						documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+                    </responses>
+                </resource>
+				
+				<!-- List Records Ext-->
+				<resource method="GET" path="/api/now/table/{tableName}" isHidden="true" name="listExt" displayName="List Records Ext" type="SIMPLE">
+					<description>Retrieves multiple records for the specified table with proper pagination information.</description>
+					<mappings>
+						<map context="IN" isRequired="true" isFixed="true" displayName="retrieve Input Mapping" name="retrieve_mapping_input">
+							<description>Set fields</description>
+							<source type="SERVICE">
+								<service nsName="pub.cloudstreams.util.services.map:delimitedString">
+									<hint>core.objectFieldList</hint>
+									<arg name="input">${core.objectFieldList}</arg>
+									<arg name="delimiter">,</arg>
+								</service>
+							</source>
+							<target type="PARAMETER">sysparm_fields</target>
+						</map>
+					</mappings>
+					
+                    <parameters>
+                        <parameter name="tableName" isRequired="true" style="URI_CONTEXT">
+							<description>Specifies table from which records has to be retrieved</description>
+						</parameter>
+						<parameter name="sysparm_query" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>An encoded query string used to filter the results</description>
+						</parameter>
+						<parameter name="sysparm_display_value" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Return the display value (true), actual value (false), or both (all) for reference fields (default: false)</description>
+						</parameter>
+						<parameter name="sysparm_exclude_reference_link" isRequired="true" isFixed="true" style="QUERYSTRING_PARAM" defaultValue="true">
+							<description>True to exclude Table API links for reference fields</description>
+						</parameter>
+						<parameter name="sysparm_suppress_pagination_header" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>True to supress pagination header (default: false)</description>
+						</parameter>
+						<parameter name="sysparm_fields" isRequired="false" isFixed="true" style="QUERYSTRING_PARAM">
+							<description>A comma-separated list of fields to return in the response</description>
+						</parameter>
+						<parameter name="sysparm_limit" isRequired="true" style="QUERYSTRING_PARAM" defaultValue="250">
+							<description>The maximum number of results returned per page (default: 10,000)</description>
+						</parameter>
+						<parameter name="sysparm_view" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Render the response according to the specified UI view (overridden by sysparm_fields)</description>
+						</parameter>
+						<parameter name="sysparm_offset" isRequired="true" style="QUERYSTRING_PARAM" defaultValue="0">
+							<description>Start index of the row</description>
+						</parameter>
+                    </parameters>
+
+                    <responses>
+                        <response name="listResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" 
+						documentRef="wmservicenow.orlando.doctypes.table:listResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" 
+						documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+                    </responses>
+                </resource>
+				
+				<!-- List Fields For BusinessObject -->
+				<resource method="GET" path="/api/now/table/sys_dictionary" isHidden="true" name="getFields" displayName="Get Fields">
+					<description>Lists all the fields of the table</description>
+                    <parameters>
+                        <parameter name="sysparm_query" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>An encoded query string used to filter the results</description>
+						</parameter>
+						<parameter name="sysparm_fields" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>A comma-separated list of fields to return in the response</description>
+						</parameter>
+                    </parameters>
+                    <responses>
+                        <response name="listResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" 
+						documentRef="wmservicenow.orlando.doctypes.table:businessObjectResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" 
+						documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+                    </responses>
+                </resource>
+				
+				<!-- List BusinessObject -->
+				<resource method="GET" path="/api/now/table/sys_db_object" isHidden="true" name="listBusinessObject" displayName="List Business Object">
+					<description>Lists all available Tables</description>
+					<mappings>
+						<map isRequired="true" isFixed="true" context="IN" name="Content-Type_Mapping" displayName="Content-Type_Mapping">
+							<source type="LITERAL">application/json</source>
+							<target type="HEADER">Content-Type</target>
+						</map>
+					</mappings>
+                    <parameters>
+                        <parameter name="sysparm_query" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>An encoded query string used to filter the results</description>
+						</parameter>
+						<parameter name="sysparm_fields" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>A comma-separated list of fields to return in the response</description>
+						</parameter>
+						<parameter name="super_class.name" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>TableName of class for which implementation table will be retrieved</description>
+						</parameter>
+                    </parameters>
+                    <responses>
+                        <response name="listResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" 
+						documentRef="wmservicenow.orlando.doctypes.table:boResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" 
+						documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+                    </responses>
+                </resource>
+				
+				<!-- List Schema of the BusinessObject -->
+				<resource method="GET" path="/{tableName}?SCHEMA" isHidden="true" name="getSchema" displayName="Get Schema">
+					<description>Lists Schema of Table</description>
+                    <parameters>
+                        <parameter name="tableName" isRequired="true" style="URI_CONTEXT">
+							<description>Specifies table for which schema will be retrieved</description>
+						</parameter>
+                    </parameters>
+                    <responses>
+                        <response name="schemaResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/xml" 
+						documentRef="wmservicenow.orlando.doctypes:emptyResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" 
+						documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+                    </responses>
+                </resource>
+				
+				<!-- Get Parent of the particular Business Object -->
+				<resource method="GET" path="/api/now/table/sys_db_object/{sys_id}" isHidden="true" name="getParent" displayName="Get Parent">
+					<description>Lists Schema of Table</description>
+                    <parameters>
+                        <parameter name="sys_id" isRequired="true" style="URI_CONTEXT">
+							<description>Unique UUID of table</description>
+						</parameter>
+                    </parameters>
+                    <responses>
+                        <response name="getResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" 
+						documentRef="wmservicenow.orlando.doctypes.table:getParentResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" 
+						documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+                    </responses>
+                </resource>
+				
+            </resources>
+        </service>
+				
+	<!-- Import Set -->
+		<service xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="RESTServiceType" endpoint="${cn.providerUrl}" name="ImportSet" displayName="Import Set API">
+		
+            <documentModel packageName="WmServiceNowProvider" nsName="wmservicenow.orlando.doctypes.importSet" useInlineModel="false">
+				<abstractObject type="businessObject" name="record">
+                    <lookup ref="wmservicenow.orlando.lookup:importSetBO" type="boList"/>
+                    <lookup ref="wmservicenow.orlando.lookup:boDescribe" type="boDescribe"/>
+                </abstractObject>
+				<abstractObject type="businessObject" name="getRecord">
+                    <lookup ref="wmservicenow.orlando.lookup:importSetBO" type="boList"/>
+                    <lookup ref="wmservicenow.orlando.lookup:deleteBoDescribe" type="boDescribe"/>
+                </abstractObject>
+			</documentModel>
+			
+				<resources>
+				    <!-- Insert Record -->
+					<resource method="POST" path="/api/now/import/{stagingTableName}" name="insert" displayName="Insert Record" type="COMPLEX">
+						<description>Inserts data into specified staging table and triggers transformation based on predefined transform maps in the import set table.</description>
+						<mappings>
+							<map isRequired="true" isFixed="true" context="IN" name="objectAsParameter" displayName="objectAsParameter">
+								<source type="PARAMETER">core.businessObject</source>
+								<target type="PARAMETER">stagingTableName</target>
+							</map>
+							<map isRequired="true" isFixed="true" context="IN" name="Content-Type_Mapping" displayName="Content-Type_Mapping">
+								<source type="LITERAL">application/json</source>
+								<target type="HEADER">Content-Type</target>
+							</map>
+							<map isRequired="true" isFixed="false" context="OUT" name="Location" displayName="Location">
+								<source type="LITERAL"></source>
+								<target type="HEADER">Location</target>
+							</map>
+						</mappings>
+						<parameters>
+							<parameter name="stagingTableName" isRequired="true" isFixed="true" style="URI_CONTEXT">
+								<description>Specifies table for which record has to be inserted</description>
+							</parameter>
+						</parameters>
+						
+						<request name="insertRequest" messageFormatterType="application/json" builderType="application/octet+idataoref" documentRef="wmservicenow.orlando.doctypes.importSet:insertRequest" excludeRoot="true"/>
+						
+						<responses>
+							<response name="insertResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" 
+							documentRef="wmservicenow.orlando.doctypes.importSet:response" excludeRoot="true"/>
+							<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" 
+							documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+						</responses>
+						
+					</resource>
+					<!-- Get Record -->
+					<resource method="GET" path="/api/now/import/{stagingTableName}/{sys_id}" name="get" displayName="Get Record" type="COMPLEX">
+						<description>Retrieves the specified import staging record and resulting transformation result.</description>
+						<mappings>
+							<map isRequired="true" isFixed="true" context="IN" name="objectAsParameter" displayName="objectAsParameter">
+								<source type="PARAMETER">core.businessObject</source>
+								<target type="PARAMETER">stagingTableName</target>
+							</map>
+							<map isRequired="true" isFixed="false" context="OUT" name="Location" displayName="Location">
+								<source type="LITERAL"></source>
+								<target type="HEADER">Location</target>
+							</map>
+						</mappings>
+						<parameters>
+							<parameter name="stagingTableName" isRequired="true" isFixed="true" style="URI_CONTEXT">
+								<description>Specifies table from which record has to be retrieved</description>
+							</parameter>
+							<parameter name="sys_id" isRequired="true" style="URI_CONTEXT">
+								<description>Unique UUID of record which has to be Retrieved</description>
+							</parameter>
+						</parameters>
+						
+						<responses>
+							<response name="getResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" 
+							documentRef="wmservicenow.orlando.doctypes.importSet:getResponse" excludeRoot="true"/>
+							<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" 
+							documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+						</responses>
+					</resource>
+					
+				</resources>
+		</service>		
+	<!-- Email -->
+	    <service xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="RESTServiceType" endpoint="${cn.providerUrl}" name="Email" displayName="Email API">
+
+			<documentModel packageName="WmServiceNowProvider" nsName="wmservicenow.orlando.doctypes.email" useInlineModel="false" />			
+			<resources>			
+				<!-- Create email -->
+				<resource method="POST" path="/api/now/v1/email" name="createEmail" displayName="Create Email">
+					 <description>Creates the email record specified in the request body.</description>
+					 
+					 <mappings>
+						<map isRequired="true" isFixed="true" context="IN" name="Content-Type_Mapping" displayName="Content-Type_Mapping">
+							<source type="LITERAL">application/json</source>
+							<target type="HEADER">Content-Type</target>
+						</map>
+					</mappings>
+					  
+					 <request name="createEmailRequest" messageFormatterType="application/json" builderType="application/octet+idataoref" documentRef="wmservicenow.orlando.doctypes.email:createEmailRequest" excludeRoot="true"/>
+					 
+					 <responses>
+						<response name="createEmailResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.email:createEmailResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.email:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource> 
+				
+				<!-- Get Email -->
+				<resource method="GET" path="/api/now/v1/email/{sys_id}" name="getEmail" displayName="Get Email">
+					 <description>Returns the record details of the specified email record.</description>
+					 
+					 <mappings>
+						<map isRequired="true" isFixed="true" context="IN" name="Content-Type_Mapping" displayName="Content-Type_Mapping">
+							<source type="LITERAL">application/json</source>
+							<target type="HEADER">Content-Type</target>
+						</map>
+					</mappings>
+					 
+					 <parameters>
+						<parameter name="sys_id" isRequired="true" style="URI_CONTEXT">
+							<description>sys_id of the email</description>
+						</parameter>
+						<parameter name="sysparm_fields" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>A comma-separated list of fields to return in the response</description>
+						</parameter>
+					 </parameters>					 
+					 <responses>
+						<response name="getEmailResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.email:getEmailResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.email:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+			</resources>
+		</service>
+		
+	<!-- User Role Inheritance -->
+		<service xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="RESTServiceType" endpoint="${cn.providerUrl}" name="UserRoleInheritance" displayName="User Role Inheritance API">
+
+			<documentModel packageName="WmServiceNowProvider" nsName="wmservicenow.orlando.doctypes.userRoleInheritance" useInlineModel="false" />
+			
+			<resources>
+				<!-- get user's role -->
+				<resource method="GET" path="api/global/user_role_inheritance" name="userRoleInheritance" displayName="Get user Role Inheritance">
+					 <description>Returns the queried user's roles and determines which roles are inherited.</description>
+					 
+					 <mappings>
+						<map isRequired="true" isFixed="true" context="IN" name="Content-Type_Mapping" displayName="Content-Type_Mapping">
+							<source type="LITERAL">application/json</source>
+							<target type="HEADER">Content-Type</target>
+						</map>
+					</mappings>
+					 
+					 <parameters>
+						<parameter name="user_sysid" isRequired="true" style="QUERYSTRING_PARAM">
+							<description>sys_id of the user for which you are getting details of role inheritance.</description>
+						</parameter>
+					 </parameters>
+					 
+					 <responses>
+						<response name="userRoleInheritanceResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.userRoleInheritance:userRoleInheritanceResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+			</resources>
+		</service>
+		
+	<!-- Service Catalog -->
+		<service xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="RESTServiceType" endpoint="${cn.providerUrl}" name="ServiceCatalog" displayName="Service Catalog API">
+		
+		    <documentModel packageName="WmServiceNowProvider" nsName="wmservicenow.orlando.doctypes.serviceCatalog" useInlineModel="false">
+				<abstractObject type="businessObject" name="addItem">
+                    <lookup ref="wmservicenow.orlando.lookup:itemsBoList" type="boList" />
+                    <lookup ref="wmservicenow.orlando.lookup:itemsBODescribe" type="boDescribe" />
+                </abstractObject>
+				<abstractObject type="businessObject" name="updateCartItem">
+                    <lookup ref="wmservicenow.orlando.lookup:updateCartItemBoList" type="boList" />
+                    <lookup ref="wmservicenow.orlando.lookup:itemsBODescribe" type="boDescribe" />
+                </abstractObject>
+			</documentModel>
+		
+		    <resources>
+		        <!-- Default Cart Contents -->
+				<resource method="GET" path="/api/sn_sc/servicecatalog/cart" name="defaultCartContents" displayName="Default Cart Contents">
+					 <description>Retrieves the default list of cart contents, cart details, and price shown on the two-step checkout page.</description>
+					 					
+					 <responses>
+						<response name="defaultCartContentsResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:defaultCartContentsResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+				
+				<!-- Get Shipping Address -->
+				<resource method="GET" path="/api/sn_sc/servicecatalog/cart/delivery_address/{user_id}" name="getShippingAddress" displayName="Get Shipping Address">
+					 <description>Retrieves the shipping address of the requested user.</description>
+					 			
+					<parameters>
+						<parameter name="user_id" isRequired="true" style="URI_CONTEXT">
+							<description>Indicates sys_id of the user, whose shipping address is retrieved.</description>
+						</parameter>
+					</parameters>
+								
+					 <responses>
+						<response name="getShippingAddressResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:getShippingAddressResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+				
+				<!-- List Catalogs -->
+				<resource method="GET" path="/api/sn_sc/servicecatalog/catalogs" name="listCatalogs" displayName="List Catalogs">
+					 <description>This method retrieves a list of catalogs to which the user has access to.</description>
+					 
+					 <parameters>
+						<parameter name="sysparm_limit" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Specify the number of entities in the response. This value applies to categories and items.</description>
+						</parameter>
+						<parameter name="sysparm_text" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Specify query text for search support</description>
+						</parameter>
+						<parameter name="sysparm_view" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Specify the device to display the item (desktop, mobile, or both)</description>
+						</parameter>
+					 </parameters>
+					
+					 <responses>
+						<response name="listCatalogsResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:listCatalogsResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+				
+				<!-- List Catalogs Ext-->
+				<resource method="GET" path="/api/sn_sc/servicecatalog/catalogs" isHidden="true" name="listCatalogsExt" displayName="List Catalogs Ext">
+					 <description>This method retrieves a list of catalogs to which the user has access to.</description>
+					 
+					 <parameters>
+						<parameter name="sysparm_limit" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Specify the number of entities in the response. This value applies to categories and items.</description>
+						</parameter>
+						<parameter name="sysparm_text" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Specify query text for search support</description>
+						</parameter>
+						<parameter name="sysparm_view" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Specify the device to display the item (desktop, mobile, or both)</description>
+						</parameter>
+					 </parameters>
+					
+					 <responses>
+						<response name="listCatalogsResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:listCatalogsResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+				<!-- Get Catalog -->
+				<resource method="GET" path="/api/sn_sc/servicecatalog/catalogs/{sys_id}" name="getCatalog" displayName="Get Catalog">
+					 <description>Retrives details of a catalog</description>
+					 <lookups>       
+						<lookup name="sys_id" ref="wmservicenow.orlando.fieldLookup.serviceCatalog:listCatalogIDs" type="optionsList">  
+						</lookup>				      						
+					</lookups>
+					<mappings>
+						<map context="IN" isRequired="true" isFixed="true" displayName="sys_id" name="sys_id">
+							<description>Look up for sys_id</description>
+							<source type="LOOKUP">sys_id</source>
+							<target type="PARAMETER">sys_id</target>
+						</map>
+					</mappings>
+					<parameters>
+						<parameter name="sys_id" isRequired="true" style="URI_CONTEXT">
+							<description>Specify the sys_id of the catalog.</description>
+						</parameter>
+						<parameter name="sysparm_view" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Specify the device to display the item (desktop, mobile, or both)</description>
+						</parameter>
+					 </parameters>
+					
+					 <responses>
+						<response name="getCatalogResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:getCatalogResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+				
+				<!-- List Catalog Categories -->
+				<resource method="GET" path="/api/sn_sc/servicecatalog/catalogs/{sys_id}/categories" name="listCatalogCategories" displayName="List Catalog Categories">
+					<description>Retrive list of categories for a specific catalog</description>
+					 <lookups>       
+						<lookup name="sys_id" ref="wmservicenow.orlando.fieldLookup.serviceCatalog:listCatalogIDs" type="optionsList">  
+						</lookup>				      						
+					</lookups> 
+					<mappings>
+						<map context="IN" isRequired="true" isFixed="true" displayName="sys_id" name="sys_id">
+							<description>Look up for sys_id</description>
+							<source type="LOOKUP">sys_id</source>
+							<target type="PARAMETER">sys_id</target>
+						</map>
+					</mappings> 
+					<parameters>
+						<parameter name="sys_id" isRequired="true" style="URI_CONTEXT">
+							<description>Specify the sys_id of the catalog.</description>
+						</parameter>
+						<parameter name="sysparam_top_level_only" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Gets only those categories whose parent is a catalog.</description>
+						</parameter>
+						<parameter name="sysparam_limit" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Number of categories in the result</description>
+						</parameter>
+						<parameter name="sysparam_view" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Specify the device to display the item (desktop, mobile, or both)</description>
+						</parameter>
+						<parameter name="sysparam_offset" isRequired="true" style="QUERYSTRING_PARAM" defaultValue="0">
+							<description>Offset to set the query window.</description>
+						</parameter>
+						
+					 </parameters>
+					
+					 <responses>
+						<response name="listCatalogCategoriesResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:listCatalogCategoriesResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+				
+				<!-- Get Category -->
+				<resource method="GET" path="/api/sn_sc/servicecatalog/categories/{sys_id}" name="getCategory" displayName="Get Category">
+					<description>Retrives details of a category</description>
+					<mappings>
+					</mappings>
+					<parameters>
+						<parameter name="sys_id" isRequired="true" style="URI_CONTEXT">
+							<description>Specify the sys_id of the category</description>
+						</parameter>
+						<parameter name="sysparam_view" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Specify the device to display the item (desktop, mobile, or both)</description>
+						</parameter>
+					 </parameters>
+					
+					 <responses>
+						<response name="getCategoryResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:getCategory" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+				
+				<!-- List Items -->
+				<resource method="GET" path="/api/sn_sc/servicecatalog/items" name="listOfCatalogItems" displayName="List of Catalog Items">
+					 <description>Get list of catalog items</description>
+					 
+					 <mappings>
+						<map isRequired="true" isFixed="false" context="OUT" name="TotalCount" displayName="Total Count">
+							<source type="LITERAL"></source>
+							<target type="HEADER">X-Total-Count</target>
+						</map>
+						<map isRequired="true" isFixed="false" context="OUT" name="Link" displayName="Link">
+							<source type="LITERAL"></source>
+							<target type="HEADER">Link</target>
+						</map>
+					 </mappings>
+					 
+					 <parameters>
+						<parameter name="sysparm_category" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Specify the category sys_id of the item.</description>
+						</parameter>
+						<parameter name="sysparm_type" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Specify the type of item. For example, Record Producer, Order Guide. This field is used by the item-search to search specified item types.</description>
+						</parameter>
+						<parameter name="sysparm_limit" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Specify the number of entities in the response. This value applies to categories and items.</description>
+						</parameter>
+						<parameter name="sysparm_text" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Specify query text for search support. (Required)</description>
+						</parameter>
+						<parameter name="sysparm_offset" isRequired="true" style="QUERYSTRING_PARAM" defaultValue="0">
+							<description>Specify the offset used for pagination.</description>
+						</parameter>
+						<parameter name="sysparm_catalog" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Specify the catalog sys_id of the item.</description>
+						</parameter>
+						<parameter name="sysparam_view" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Specify the device to display the item (desktop, mobile, or both)</description>
+						</parameter>
+					 </parameters>
+					
+					 <responses>
+						<response name="listItemsResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:listItemsResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+				
+				<!-- List Items Ext -->
+				<resource method="GET" path="/api/sn_sc/servicecatalog/items" isHidden="true" name="listOfCatalogItemsExt" displayName="List of Catalog Items Ext">
+					 <description>Get list of catalog items</description>
+					 
+					 <mappings>
+						<map isRequired="true" isFixed="false" context="OUT" name="TotalCount" displayName="Total Count">
+							<source type="LITERAL"></source>
+							<target type="HEADER">X-Total-Count</target>
+						</map>
+						<map isRequired="true" isFixed="false" context="OUT" name="Link" displayName="Link">
+							<source type="LITERAL"></source>
+							<target type="HEADER">Link</target>
+						</map>
+					 </mappings>
+					 
+					 <parameters>
+						<parameter name="sysparm_category" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Specify the category sys_id of the item.</description>
+						</parameter>
+						<parameter name="sysparm_type" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Specify the type of item. For example, Record Producer, Order Guide. This field is used by the item-search to search specified item types.</description>
+						</parameter>
+						<parameter name="sysparm_limit" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Specify the number of entities in the response. This value applies to categories and items.</description>
+						</parameter>
+						<parameter name="sysparm_text" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Specify query text for search support. (Required)</description>
+						</parameter>
+						<parameter name="sysparm_offset" isRequired="true" style="QUERYSTRING_PARAM" defaultValue="0">
+							<description>Specify the offset used for pagination.</description>
+						</parameter>
+						<parameter name="sysparm_catalog" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Specify the catalog sys_id of the item.</description>
+						</parameter>
+						<parameter name="sysparam_view" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Specify the device to display the item (desktop, mobile, or both)</description>
+						</parameter>
+					 </parameters>
+					
+					 <responses>
+						<response name="listItemsResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:listItemsResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+				
+				<!-- Get Item -->
+				<resource method="GET" path="/api/sn_sc/servicecatalog/items/{sys_id}" name="getCatalogItem" displayName="Get Catalog Item">
+					<description>Retrieves details of a specific catalog item</description>
+					 <lookups>       
+						<lookup name="sys_id" ref="wmservicenow.orlando.fieldLookup.serviceCatalog:listCatalogItemIDs" type="optionsList">  
+						</lookup>				      						
+					</lookups> 
+					 <mappings>
+						<map context="IN" isRequired="true" isFixed="true" displayName="sys_id" name="sys_id">
+							<description>Look up for sys_id</description>
+							<source type="LOOKUP">sys_id</source>
+							<target type="PARAMETER">sys_id</target>
+						</map>
+					</mappings>
+					<parameters>
+						<parameter name="sys_id" isRequired="true" style="URI_CONTEXT">
+							<description>Specify the sys_id of the item.</description>
+						</parameter>
+						<parameter name="sysparam_view" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Specify the device to display the item (desktop, mobile, or both)</description>
+						</parameter>
+					 </parameters>
+					
+					 <responses>
+						<response name="getItemResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:getItemResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+				
+				<!-- Update Cart Item -->
+				 <resource method="PUT" path="/api/sn_sc/servicecatalog/cart/{cart_item_id}" name="updateCartItem" displayName="Update Cart Item" type="COMPLEX">
+					 <description>This method edits and updates any item in the cart.</description>
+
+					 <mappings>
+						<map isRequired="true" isFixed="true" context="IN" name="cartItemIdMapping" displayName="Cart Item Id Mapping">
+                            <source type="PARAMETER">core.businessObject</source>
+                            <target type="PARAMETER">cart_item_id</target>
+                        </map>
+					 </mappings>
+					 
+					 <parameters>
+						<parameter name="cart_item_id" isRequired="true" isFixed="true" style="URI_CONTEXT">
+							<description>Represents the sys_id of the item in the cart.</description>
+						</parameter>
+					 </parameters>
+					
+					 <request name="updateCartItemRequest" messageFormatterType="application/json" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:updateCartItemRequest" excludeRoot="true"/>
+					 
+					 <responses>
+						<response name="updateCartItemResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:updateCartItemResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource> 
+				
+				<!-- CheckOut Cart -->
+				<resource method="POST" path="/api/sn_sc/servicecatalog/cart/checkout" name="checkoutCart" displayName="CheckOut Cart">
+					 <description>Checks out the cart and returns the request number and request order ID.</description>
+
+					  <request name="checkoutRequest" messageFormatterType="application/json" builderType="application/json" documentRef="wmservicenow.orlando.doctypes:emptyResponse" excludeRoot="true"/>
+					 
+					 <responses>
+						<response name="checkoutCartResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:checkoutCartResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+				
+				<!-- Submit Order -->
+				<resource method="POST" path="/api/sn_sc/servicecatalog/cart/submit_order" name="submitOrder" displayName="Submit Order">
+					 <description>Checks out the user cart, whether two-step parameter is enabled or disabled.</description>
+
+					 <request name="submitOrderRequest" messageFormatterType="application/json" builderType="application/json" documentRef="wmservicenow.orlando.doctypes:emptyResponse" excludeRoot="true"/>
+					 <responses>
+						<response name="submitOrderResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:submitOrderResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+				
+				<!-- Delete Items From Cart -->
+				<resource method="DELETE" path="/api/sn_sc/servicecatalog/cart/{cart_item_id}" name="deleteItemsFromCart" displayName="Delete Items From Cart">
+					 <description>Deletes the items in the cart for a given sys_id.</description>
+					 
+					 <parameters>
+						<parameter name="cart_item_id" isRequired="true" style="URI_CONTEXT">
+							<description>Represents the sys_id of the item in the cart.</description>
+						</parameter>
+					</parameters>
+					
+					 <responses>
+						<response name="deleteItemsFromCartResponse" code="204" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:emptyResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+				
+				<!-- Empty Cart -->
+				<resource method="DELETE" path="/api/sn_sc/servicecatalog/cart/{sys_id}/empty" name="emptyCart" displayName="Empty Cart">
+					 <description>Deletes the cart and contents of the cart for a given user role and sys_id.</description>
+					 
+					 <parameters>
+						<parameter name="sys_id" isRequired="true" style="URI_CONTEXT">
+							<description>Indicates the sys_id of the cart to empty.</description>
+						</parameter>
+					</parameters>
+					
+					 <responses>
+						<response name="emptyCartResponse" code="204" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:emptyResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+				
+				<!-- Describe Needs of an Order Guide -->
+				<resource method="PUT" path="/api/sn_sc/servicecatalog/items/{sys_id}/submit_guide" name="describeNeedsOfAnOrderGuide" displayName="Describe Needs of an Order Guide" type="COMPLEX">
+					 <description>Retrieves a list of items based on the needs described for an order guide.</description>
+					 
+					 <mappings>
+						<map isRequired="true" isFixed="true" context="IN" name="objectAsParameter" displayName="objectAsParameter">
+                            <source type="PARAMETER">core.businessObject</source>
+                            <target type="PARAMETER">sys_id</target>
+                        </map>
+					 </mappings>
+					 
+					 <parameters>
+						<parameter name="sys_id" isRequired="true" isFixed="true" style="URI_CONTEXT">
+							<description>Specify the category sys_id of the item.</description>
+						</parameter>
+					 </parameters>
+
+					  <request name="describeNeedsOfAnOrderGuideRequest" messageFormatterType="application/json" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:describeNeedsOfAnOrderGuideRequest" excludeRoot="true"/>
+					 
+					 <responses>
+						<response name="describeNeedsOfAnOrderGuideResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:describeNeedsOfAnOrderGuideResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+				
+				<!-- Add Item To Cart -->
+				<resource method="POST" path="/api/sn_sc/servicecatalog/items/{sys_id}/add_to_cart" name="addItemToCart" displayName="Add Item To Cart" type="COMPLEX">
+					 <description>Adds an item to the cart of the current user.</description>
+					 <mappings>
+						<map isRequired="true" isFixed="true" context="IN" name="objectAsParameter" displayName="objectAsParameter">
+                            <source type="PARAMETER">core.businessObject</source>
+                            <target type="PARAMETER">sys_id</target>
+                        </map>
+					 </mappings>
+					 
+					 <parameters>
+						<parameter name="sys_id" isRequired="true" isFixed="true" style="URI_CONTEXT">
+							<description>Specify the category sys_id of the item.</description>
+						</parameter>
+					 </parameters>
+
+					  <request name="addItemToCartRequest" messageFormatterType="application/json" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:addItemToCartRequest" excludeRoot="true"/>
+					 
+					 <responses>
+						<response name="addItemToCartResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:addItemToCartResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+				
+			    <!-- Submit a Record Producer -->
+				<resource method="POST" path="/api/sn_sc/servicecatalog/items/{sys_id}/submit_producer" name="submitRecordProducer" displayName="Submit a Record Producer" type="COMPLEX">
+					 <description>Creates a record and returns the Table API relative path and redirect url to access the created record.</description>
+					 
+					 <mappings>
+						<map isRequired="true" isFixed="true" context="IN" name="objectAsParameter" displayName="objectAsParameter">
+                            <source type="PARAMETER">core.businessObject</source>
+                            <target type="PARAMETER">sys_id</target>
+                        </map>
+					 </mappings>
+					 
+					 <parameters>
+						<parameter name="sys_id" isRequired="true" isFixed = "true" style="URI_CONTEXT">
+							<description>Specify the category sys_id of the item.</description>
+						</parameter>
+						<parameter name="sysparm_view" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Specify the device to display the item (desktop, mobile, or both)</description>
+						</parameter>
+					 </parameters>
+
+					  <request name="submitRecordProducerRequest" messageFormatterType="application/json" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:describeNeedsOfAnOrderGuideRequest" excludeRoot="true"/>
+					 
+					 <responses>
+						<response name="submitRecordProducerResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:submitRecordProducerResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>	
+                
+				<!-- Add Item To Wishlist --> 
+				<resource method="POST" path="/api/sn_sc/servicecatalog/items/{sys_id}/add_to_wishlist" name="addItemToWishlist" displayName="Add Item To Wishlist" type="COMPLEX">
+					 <description>Adds the specified item to the wish list cart..</description>
+					 <mappings>
+						<map isRequired="true" isFixed="true" context="IN" name="objectAsParameter" displayName="objectAsParameter">
+                            <source type="PARAMETER">core.businessObject</source>
+                            <target type="PARAMETER">sys_id</target>
+                        </map>
+					 </mappings>
+					 
+					 <parameters>
+						<parameter name="sys_id" isRequired="true" isFixed="true" style="URI_CONTEXT">
+							<description>Specify the category sys_id of the item.</description>
+						</parameter>
+					 </parameters>
+
+					  <request name="addItemToWishlistRequest" messageFormatterType="application/json" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:addItemToWishlistRequest" excludeRoot="true"/>
+					 
+					 <responses>
+						<response name="addItemToWishlistResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:addItemToWishlistResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+				
+				<!-- Get Wishlist Item -->
+				<resource method="GET" path="/api/sn_sc/servicecatalog/wishlist/{cart_item_id}  " name="getWishlistItem" displayName="Get Wishlist Item">
+					<description>Retrieves the details of the specified item stored in the wish list cart</description>
+					<lookups>       
+						<lookup name="sys_id" ref="wmservicenow.orlando.fieldLookup.serviceCatalog:listWishlistItemIDs" type="optionsList">  
+						</lookup>				      						
+					</lookups> 
+					<mappings>
+						<map context="IN" isRequired="true" isFixed="true" displayName="cart_item_id" name="cart_item_id">
+							<description>Look up for cart_item_id</description>
+							<source type="LOOKUP">cart_item_id</source>
+							<target type="PARAMETER">cart_item_id</target>
+						</map>
+					</mappings>
+					<parameters>
+						<parameter name="cart_item_id" isRequired="true" style="URI_CONTEXT">
+							<description>Specify the cart_item_id of the item.</description>
+						</parameter>
+					 </parameters>
+					
+					 <responses>
+						<response name="getWishlistResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:getWishlistResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+				
+				<!-- List Wishlist Item -->
+				<resource method="GET" path="/api/sn_sc/servicecatalog/wishlist" name="listWishlistItems" displayName="List Wishlist Items">
+					 <description>Retrieves a list of items from the logged in user's wish list.</description>
+					 
+					 <responses>
+						<response name="listWishlistItemsResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:listWishlistItemsResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+				
+				<!-- List Wishlist Item Ext-->
+				<resource method="GET" path="/api/sn_sc/servicecatalog/wishlist" isHidden="true" name="listWishlistItemsExt" displayName="List Wishlist Items Ext">
+					 <description>Retrieves a list of items from the logged in user's wish list.</description>
+					 
+					 <responses>
+						<response name="listWishlistItemsResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:listWishlistItemsResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+				
+				<!-- Variable display value -->
+				<resource method="POST" path="/api/sn_sc/servicecatalog/variables/{sys_id}/display_value" name="variableDisplayValue" displayName="Variable display value">
+					 <description>Returns the display value of the specified variable.</description>				 					 
+					 <parameters>
+						<parameter name="sys_id" isRequired="true" isFixed="false" style="URI_CONTEXT">
+							<description>Specify the category sys_id of the item.</description>
+						</parameter>
+					 </parameters>	
+					 
+					  <request name="variableDisplayValueRequest" messageFormatterType="application/json" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:variableDisplayValueRequest" excludeRoot="true"/>				 
+					 
+					 <responses>
+						<response name="variableDisplayValueResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:variableDisplayValueResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>	
+               
+			   <!-- Buy Item -->
+                <resource method="POST" path="/api/sn_sc/servicecatalog/items/{sys_id}/order_now" name="buyItem" displayName="Buy Item" type="COMPLEX">
+					 <description>Orders the specified catalog item.</description>
+                     <mappings>
+						<map isRequired="true" isFixed="true" context="IN" name="objectAsParameter" displayName="objectAsParameter">
+                            <source type="PARAMETER">core.businessObject</source>
+                            <target type="PARAMETER">sys_id</target>
+                        </map>
+					 </mappings> 				 
+					 <parameters>
+						<parameter name="sys_id" isRequired="true" isFixed="true" style="URI_CONTEXT">
+							<description>Specify the category sys_id of the item.</description>
+						</parameter>
+					 </parameters>					 
+					  <request name="buyItemRequest" messageFormatterType="application/json" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:buyItemRequest" excludeRoot="true"/>				 
+					 <responses>
+						<response name="buyItemResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:buyItemResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>	
+               
+			   <!-- Checkout Order Guide -->
+			   <resource method="POST" path="/api/sn_sc/servicecatalog/items/{sys_id}/checkout_guide" name="checkoutOrderGuide" displayName="Checkout Order Guide">
+					 <description>Retrieves an array of contents requested for checkout.</description>				 
+                    <mappings>	 					
+					    <map isRequired="true" isFixed="true" context="IN" name="Content-Type_Mapping" displayName="Content-Type_Mapping">
+							<source type="LITERAL">application/json</source>
+							<target type="HEADER">Content-Type</target>
+						</map>					
+					</mappings> 				 
+					 <parameters>
+						<parameter name="sys_id" isRequired="true" isFixed="false" style="URI_CONTEXT">
+							<description>Specify the category sys_id of the item.</description>
+						</parameter>
+					 </parameters>					 
+					  <request name="checkoutOrderGuideRequest" messageFormatterType="application/json" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:checkoutOrderGuideRequest" excludeRoot="true"/>				 
+					 <responses>
+						<response name="checkoutOrderGuideResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.serviceCatalog:checkoutOrderGuideResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>	
+				
+			</resources>
+		</service>
+		
+	<!-- Scorecard -->
+		<service xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="RESTServiceType" endpoint="${cn.providerUrl}" name="scoreCard" displayName="ScoreCards API">
+
+			<documentModel packageName="WmServiceNowProvider" nsName="wmservicenow.orlando.doctypes.scoreCard" useInlineModel="false" />
+			
+			<resources>
+			
+				<!-- Favourites a scorecard -->
+				<resource method="POST" path="/api/now/pa/scorecards" name="favouritesScoreCard" displayName="Favourites a ScoreCard">
+				
+					 <description>Favourites a scorecard.</description>
+					 
+					 <mappings>
+						<map isRequired="true" isFixed="true" context="IN" name="Content-Type_Mapping" displayName="Content-Type_Mapping">
+							<source type="LITERAL">application/json</source>
+							<target type="HEADER">Content-Type</target>
+						</map>
+					</mappings>
+					 
+					 <parameters>
+						<parameter name="sysparm_uuid" isRequired="true" style="QUERYSTRING_PARAM">
+							<description>The identification of the scorecard the user wants to favorite</description>
+						</parameter>
+					 </parameters>
+					 
+					 <request name="favouriteRequest" messageFormatterType="application/json" builderType="application/octet+idataoref" documentRef="wmservicenow.orlando.doctypes:emptyResponse" excludeRoot="true"/>
+					 
+					 <responses>
+						<response name="favouriteResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes:emptyResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+				
+				<!-- UnFavourite a scorecard -->				
+				
+				<resource method="DELETE" path="/api/now/pa/scorecards" name="unfavouritesScoreCard" displayName="UnFavourites a ScoreCard">
+					 <description>Unfavourites a scorecard.</description>
+					 
+					 <mappings>
+						<map isRequired="true" isFixed="true" context="IN" name="Content-Type_Mapping" displayName="Content-Type_Mapping">
+							<source type="LITERAL">application/json</source>
+							<target type="HEADER">Content-Type</target>
+						</map>
+					</mappings>
+					 
+					 <parameters>
+						<parameter name="sysparm_uuid" isRequired="true" style="QUERYSTRING_PARAM">
+							<description>The identification of the scorecard the user wants to remove as a favorite</description>
+						</parameter>
+					 </parameters>
+					 
+					 <responses>
+						<response name="unFavouriteResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes:emptyResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+				
+				<!-- List all scorecards -->
+				<resource method="GET" path="/api/now/pa/scorecards" name="list" displayName="List">
+					 <description>Retrieves list of Scorecards.</description>
+					 <mappings>
+						<map isRequired="true" isFixed="true" context="IN" name="Content-Type_Mapping" displayName="Content-Type_Mapping">
+							<source type="LITERAL">application/json</source>
+							<target type="HEADER">Content-Type</target>
+						</map>
+					</mappings>
+					 
+					 <parameters>
+						<parameter name="sysparm_uuid" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>The scope of the scorecard or list of breakdown scorecards, or a comma-separated list of scopes</description>
+						</parameter>
+						<parameter name="sysparm_breakdown" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>sys_id of the breakdown for a list of breakdown scorecards</description>
+						</parameter>
+						<parameter name="sysparm_breakdown_relation" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>sys_id of the breakdown relation for a list of related breakdown scorecards</description>
+						</parameter>
+						<parameter name="sysparm_elements_filter" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>sys_id of the elements filter to be applied to the list of breakdown scorecards</description>
+						</parameter>
+						<parameter name="sysparm_display" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>True/False to return scorecards whose indicators have 'Publish on Scorecards' checked resp. unchecked, 'all' to ignore the value of 'Publish on Scorecards', default to true</description>
+						</parameter>
+						<parameter name="sysparm_favorites" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>True to return only scorecards that are the user's favorite</description>
+						</parameter>
+						<parameter name="sysparm_key" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>True to return only scorecards of Key indicators</description>
+						</parameter>
+						<parameter name="sysparm_target" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>True to return only scorecards that have a target</description>
+						</parameter>
+						<parameter name="sysparm_contains" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Matches scorecards by name or description, use comma separated list of strings</description>
+						</parameter>
+						<parameter name="sysparm_tags" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Matches scorecards by tag sysids, use comma separated list of sysids</description>
+						</parameter>
+						<parameter name="sysparm_per_page" isRequired="false" style="QUERYSTRING_PARAM" defaultValue="100">
+							<description>pages by this amount, defaults to 10, maximum is 100</description>
+						</parameter>
+						<parameter name="sysparm_page" isRequired="true" style="QUERYSTRING_PARAM" defaultValue="1">
+							<description>page of list of scorecards, defaults to 1</description>
+						</parameter>
+						<parameter name="sysparm_sortdir" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Use value ASC to sort in ascending order, use DESC to sort in descending order</description>
+						</parameter>
+						<parameter name="sysparm_display_value" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>True/false to return display value or reference field, or 'all' to return both, defaults to all</description>
+						</parameter>
+						<parameter name="sysparm_exclude_reference_link" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>True to not return Link Information for Reference Fields</description>
+						</parameter>
+						<parameter name="sysparm_include_scores" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>True to include scores for each scorecard, requires the presence of sysparm_uuid</description>
+						</parameter>
+						<parameter name="sysparm_from" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Start date in ISO-8601 format for which to return scores</description>
+						</parameter>
+						<parameter name="sysparm_to" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>End date in ISO-8601 format for which to return scores</description>
+						</parameter>
+						<parameter name="sysparm_step" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Positive integer indicating the gap between score dates, default to 1</description>
+						</parameter>
+						<parameter name="sysparm_limit" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Maximum number of scores to return, -1 means to return all scores, default to -1</description>
+						</parameter>
+						<parameter name="sysparm_include_available_breakdowns" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>True to include all available breakdowns for a scorecard</description>
+						</parameter>
+						<parameter name="sysparm_include_available_aggregates" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>True to include all available aggregates for a scorecard</description>
+						</parameter>
+						<parameter name="sysparm_include_score_notes" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>True to include all available score notes</description>
+						</parameter>
+						<parameter name="sysparm_sortby" isRequired="false" style="QUERYSTRING_PARAM" dataType="Record" documentRef="wmservicenow.orlando.doctypes.scoreCard:sysparm_sortby">
+							<description>Field to sort by</description>
+						</parameter>
+						<parameter name="sysparm_offset" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Start index of the row</description>
+						</parameter>
+					 </parameters>
+					 
+					 <responses>
+						<response name="listResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.scoreCard:retrieveScoreCardResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>			
+			</resources>		
+		</service>
+		
+	<!-- Aggregate -->
+		<service xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="RESTServiceType" endpoint="${cn.providerUrl}" name="Aggregate" displayName="Aggregate API">
+
+			<documentModel packageName="WmServiceNowProvider" nsName="wmservicenow.orlando.doctypes.aggregate" useInlineModel="false">
+				<abstractObject type="businessObject" name="aggregate">
+                    <lookup ref="wmservicenow.orlando.lookup:businessObjectList" type="boList" />
+                    <lookup ref="wmservicenow.orlando.lookup:aggregateBoDescribe" type="boDescribe" />
+                </abstractObject>
+				<abstractObject type="businessObject" name="record">
+                    <lookup ref="wmservicenow.orlando.lookup:businessObjectList" type="boList" />
+                    <lookup ref="wmservicenow.orlando.lookup:boDescribe" type="boDescribe" />
+                </abstractObject> 
+			</documentModel>
+			<resources>
+			
+			    <!-- Retrieve Statistical Calculation for table -->
+				<resource method="GET" path="/api/now/stats/{tableName}" name="retrieveStatisticalCalculation" displayName="Retrieve Statistical Calculation for table" type="COMPLEX">
+					 <description>Retrieves records for the specified table and performs aggregate functions on the returned values.</description>
+					 
+					 <properties>
+						<property name="fieldExpansionLevel" value="1"/>
+					 </properties>	
+					 
+					 <mappings>
+						<map isRequired="true" isFixed="true" context="IN" name="objectAsParameter" displayName="objectAsParameter">
+                            <source type="PARAMETER">core.businessObject</source>
+                            <target type="PARAMETER">tableName</target>
+                        </map>
+						<map isRequired="true" isFixed="true" context="IN" name="avgFieldsAsParameter" displayName="Avg Field as Parameter">
+							<source type="SERVICE">
+									<service nsName="wmservicenow.orlando.utils.aggregate:avgFields">
+										<arg name="input">${core.objectFieldList}</arg>
+									</service>
+							</source>
+							<target type="PARAMETER">sysparm_avg_fields</target>
+						</map>
+						<map isRequired="true" isFixed="true" context="IN" name="minFieldAsParameter" displayName="Min Field as Parameter">
+							<source type="SERVICE">
+									<service nsName="wmservicenow.orlando.utils.aggregate:minFields">
+										<arg name="input">${core.objectFieldList}</arg>
+									</service>
+								</source>
+							<target type="PARAMETER">sysparm_min_fields</target>
+						</map>
+						<map isRequired="true" isFixed="true" context="IN" name="maxFieldAsParameter" displayName="Max Field as Parameter">
+							<source type="SERVICE">
+									<service nsName="wmservicenow.orlando.utils.aggregate:maxFields">
+										<arg name="input">${core.objectFieldList}</arg>
+									</service>
+								</source>
+							<target type="PARAMETER">sysparm_max_fields</target>
+						</map>
+						<map isRequired="true" isFixed="true" context="IN" name="sumFieldAsParameter" displayName="Sum Field as Parameter">
+							<source type="SERVICE">
+									<service nsName="wmservicenow.orlando.utils.aggregate:sumFields">
+										<arg name="input">${core.objectFieldList}</arg>
+									</service>
+								</source>
+							<target type="PARAMETER">sysparm_sum_fields</target>
+						</map>
+					 </mappings>
+					 
+					 <parameters>
+						<parameter name="tableName" isRequired="true" isFixed="true" style="URI_CONTEXT">
+							<description>Table name in which Statistical calculation has to be performed</description>
+						</parameter>
+						<parameter name="sysparm_avg_fields" isRequired="true" isFixed="true" style="QUERYSTRING_PARAM">
+							<description>A comma-separated list of fields for which to calculate the average value</description>
+						</parameter>
+						<parameter name="sysparm_min_fields" isRequired="true" isFixed="true" style="QUERYSTRING_PARAM">
+							<description>A comma-separated list of fields for which to calculate the minimum value</description>
+						</parameter>
+						<parameter name="sysparm_max_fields" isRequired="true" isFixed="true" style="QUERYSTRING_PARAM">
+							<description>A comma-separated list of fields for which to calculate the maximum value</description>
+						</parameter>
+						<parameter name="sysparm_sum_fields" isRequired="true" isFixed="true" style="QUERYSTRING_PARAM">
+							<description>A comma-separated list of fields for which to calculate the sum of the values</description>
+						</parameter>
+						<parameter name="sysparm_count" isRequired="false" isFixed="false" style="QUERYSTRING_PARAM" defaultValue="false">
+							<description>Calculate the number of records (default: false)</description>
+						</parameter>
+						<parameter name="sysparm_order_by" isRequired="false" isFixed="false" style="QUERYSTRING_PARAM">
+							<description>A comma-separated list of fields to order results by</description>
+						</parameter>
+						<parameter name="sysparm_having" isRequired="false" isFixed="false" style="QUERYSTRING_PARAM">
+							<description>An additional query allowing you to filter the data based on an aggregate operation</description>
+						</parameter>
+					 </parameters>
+					
+					 <responses>
+						<response name="getResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.aggregate:getResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+				
+				
+				<resource method="GET" path="/api/now/stats/{tableName}" name="retrieveStatisticalCalculationWithGroupByField" displayName="Retrieve Statistical Calculation for table With GroupBy Field" type="COMPLEX">
+					 <description>Retrieves records for the specified table and performs aggregate functions on the returned values.</description>
+					 
+					 <properties>
+						<property name="fieldExpansionLevel" value="1"/>
+					 </properties>	
+					 
+					 <mappings>
+						<map isRequired="true" isFixed="true" context="IN" name="objectAsParameter" displayName="objectAsParameter">
+                            <source type="PARAMETER">core.businessObject</source>
+                            <target type="PARAMETER">tableName</target>
+                        </map>
+						<map isRequired="true" isFixed="true" context="IN" name="avgFieldsAsParameter" displayName="Avg Field as Parameter">
+							<source type="SERVICE">
+									<service nsName="wmservicenow.orlando.utils.aggregate:avgFields">
+										<arg name="input">${core.objectFieldList}</arg>
+									</service>
+								</source>
+							<target type="PARAMETER">sysparm_avg_fields</target>
+						</map>
+						<map isRequired="true" isFixed="true" context="IN" name="minFieldAsParameter" displayName="Min Field as Parameter">
+							<source type="SERVICE">
+									<service nsName="wmservicenow.orlando.utils.aggregate:minFields">
+										<arg name="input">${core.objectFieldList}</arg>
+									</service>
+								</source>
+							<target type="PARAMETER">sysparm_min_fields</target>
+						</map>
+						<map isRequired="true" isFixed="true" context="IN" name="maxFieldAsParameter" displayName="Max Field as Parameter">
+							<source type="SERVICE">
+									<service nsName="wmservicenow.orlando.utils.aggregate:maxFields">
+										<arg name="input">${core.objectFieldList}</arg>
+									</service>
+								</source>
+							<target type="PARAMETER">sysparm_max_fields</target>
+						</map>
+						<map isRequired="true" isFixed="true" context="IN" name="sumFieldAsParameter" displayName="Sum Field as Parameter">
+							<source type="SERVICE">
+									<service nsName="wmservicenow.orlando.utils.aggregate:sumFields">
+										<arg name="input">${core.objectFieldList}</arg>
+									</service>
+								</source>
+							<target type="PARAMETER">sysparm_sum_fields</target>
+						</map>
+					 </mappings>
+					 
+					 <parameters>
+						<parameter name="tableName" isRequired="true" isFixed="true" style="URI_CONTEXT">
+							<description>Table name in which Statistical calculation has to be performed</description>
+						</parameter>
+						<parameter name="sysparm_avg_fields" isRequired="true" isFixed="true" style="QUERYSTRING_PARAM">
+							<description>A comma-separated list of fields for which to calculate the average value</description>
+						</parameter>
+						<parameter name="sysparm_min_fields" isRequired="true" isFixed="true" style="QUERYSTRING_PARAM">
+							<description>A comma-separated list of fields for which to calculate the minimum value</description>
+						</parameter>
+						<parameter name="sysparm_max_fields" isRequired="true" isFixed="true" style="QUERYSTRING_PARAM">
+							<description>A comma-separated list of fields for which to calculate the maximum value</description>
+						</parameter>
+						<parameter name="sysparm_sum_fields" isRequired="true" isFixed="true" style="QUERYSTRING_PARAM">
+							<description>A comma-separated list of fields for which to calculate the sum of the values</description>
+						</parameter>
+						<parameter name="sysparm_count" isRequired="false" isFixed="false" style="QUERYSTRING_PARAM" defaultValue="false">
+							<description>Calculate the number of records (default: false)</description>
+						</parameter>
+						<parameter name="sysparm_order_by" isRequired="false" isFixed="false" style="QUERYSTRING_PARAM">
+							<description>A comma-separated list of fields to order results by</description>
+						</parameter>
+						<parameter name="sysparm_group_by" isRequired="true" isFixed="false" style="QUERYSTRING_PARAM">
+							<description>A comma-separated list of fields to group results by</description>
+						</parameter>
+						<parameter name="sysparm_having" isRequired="false" isFixed="false" style="QUERYSTRING_PARAM">
+							<description>An additional query allowing you to filter the data based on an aggregate operation</description>
+						</parameter>
+						<parameter name="sysparm_display_value" isRequired="false" isFixed="false" style="QUERYSTRING_PARAM">
+							<description>Return the display value (true), actual value (false), or both (all) in grouped results (default: false)</description>
+						</parameter>
+					 </parameters>
+					
+					 <responses>
+						<response name="getResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.aggregate:getWithGroupResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+				
+			</resources>
+		
+		</service>
+		
+    <!-- Attachment -->
+		<service xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="RESTServiceType" endpoint="${cn.providerUrl}" name="Attachment" displayName="Attachment API">
+
+			<documentModel packageName="WmServiceNowProvider" nsName="wmservicenow.orlando.doctypes.attachment" useInlineModel="false">
+				<abstractObject type="businessObject" name="record">
+                    <lookup ref="wmservicenow.orlando.lookup:uploadBoList" type="boList" />
+                    <lookup ref="wmservicenow.orlando.lookup:uploadBoDescribe" type="boDescribe" />
+                </abstractObject>
+			</documentModel>
+			<resources>
+		
+				<!-- List Attachment -->
+				<resource method="GET" path="/api/now/attachment" name="list" displayName="List">
+					 <description>Returns metadata of multiple attachments.</description>
+					 
+					 <parameters>
+						<parameter name="sysparm_query" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>An encoded query string used to filter the results (relative to Attachment table)</description>
+						</parameter>
+						<parameter name="sysparm_suppress_pagination_header" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>True to supress pagination header (default: false)</description>
+						</parameter>
+						<parameter name="sysparm_limit" isRequired="true" style="QUERYSTRING_PARAM" defaultValue="250">
+							<description>The maximum number of results returned per page (default: 10,000)</description>
+						</parameter>
+						<parameter name="sysparm_offset" isRequired="true" style="QUERYSTRING_PARAM" defaultValue="0">
+							<description>Start index of the row</description>
+						</parameter>
+					 </parameters>
+					 
+					 <responses>
+						<response name="listResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.attachment:listResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+				
+                <!-- List AttachmentExt -->
+				<resource method="GET" path="/api/now/attachment" isHidden="true" name="listExt" displayName="List Ext">
+					 <description>Returns metadata of multiple attachments.</description>
+					 
+					 <parameters>
+						<parameter name="sysparm_query" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>An encoded query string used to filter the results (relative to Attachment table)</description>
+						</parameter>
+						<parameter name="sysparm_suppress_pagination_header" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>True to supress pagination header (default: false)</description>
+						</parameter>
+						<parameter name="sysparm_limit" isRequired="true" style="QUERYSTRING_PARAM" defaultValue="250">
+							<description>The maximum number of results returned per page (default: 10,000)</description>
+						</parameter>
+						<parameter name="sysparm_offset" isRequired="true" style="QUERYSTRING_PARAM" defaultValue="0">
+							<description>Start index of the row</description>
+						</parameter>
+					 </parameters>
+					 
+					 <responses>
+						<response name="listResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.attachment:listResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>				
+				<!-- Retrieve Attachment Metadata -->
+				<resource method="GET" path="/api/now/attachment/{sys_id}" name="get" displayName="Retrieve Attachment Metadata">
+					 <description>Retrieve metadata for the attachment file with a specific sys_id value.</description>
+					   <lookups>       
+						<lookup name="sys_id" ref="wmservicenow.orlando.fieldLookup.attachment:listAllAttachmentIDs" type="optionsList"/>	
+						</lookups>
+					<mappings>
+						<map context="IN" isRequired="true" isFixed="true" displayName="sys_id" name="sys_id">
+							<description>Look up for sys_id</description>
+							<source type="LOOKUP">sys_id</source>
+							<target type="PARAMETER">sys_id</target>
+						</map>
+					</mappings>
+					<parameters>
+						<parameter name="sys_id" isRequired="true" style="URI_CONTEXT">
+							<description>Unique UUID of attachment which has to be Retrieved</description>
+						</parameter>
+					 </parameters>
+					 <responses>
+						<response name="getResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.attachment:getResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+				
+				<!-- Delete Attachment -->
+				<resource method="DELETE" path="/api/now/attachment/{sys_id}" name="delete" displayName="Delete">
+					 <description>Deletes the attachment with a specific sys_id value.</description>
+				    <lookups>       
+						<lookup name="sys_id" ref="wmservicenow.orlando.fieldLookup.attachment:listAllAttachmentIDs" type="optionsList">  
+						</lookup>				      						
+					</lookups> 
+					<mappings>
+						<map context="IN" isRequired="true" isFixed="true" displayName="sys_id" name="sys_id">
+							<description>Look up for sys_id</description>
+							<source type="LOOKUP">sys_id</source>
+							<target type="PARAMETER">sys_id</target>
+						</map>
+					</mappings>
+					<parameters>
+						<parameter name="sys_id" isRequired="true" style="URI_CONTEXT">
+							<description>Unique UUID of attachment which has to be Deleted</description>
+						</parameter>
+					</parameters>
+					
+					 <responses>
+						<response name="deleteResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes:emptyResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+				
+				<!-- Upload Attachment -->
+				<resource method="POST" path="/api/now/attachment/file" name="upload" displayName="Upload" type="COMPLEX">
+					 <description>Uploads a binary file specified in the request body as an attachment.</description>
+					 <mappings>
+						<map isRequired="true" context="IN" name="Content-Type_Mapping" displayName="Content-Type_Mapping">
+							<source type="LITERAL">*/*</source>
+							<target type="HEADER">Content-Type</target>
+						</map>
+						<map isRequired="true" context="IN" name="Table_Name_Mapping" displayName="Table_Name_Mapping">
+							<source type="SERVICE">
+								<service nsName="wmservicenow.orlando.utils.attachment:tableName">
+									<arg name="input">${core.businessObject}</arg>
+								</service>
+							</source>
+							<target type="PARAMETER">table_name</target>
+						</map>
+					 </mappings>
+					 <parameters>
+						<parameter name="table_name" isRequired="true" isFixed="true" style="QUERYSTRING_PARAM">
+							<description>Table to attach the file to</description>
+						</parameter>
+						<parameter name="table_sys_id" isRequired="true" style="QUERYSTRING_PARAM">
+							<description>Record to attach the file to</description>
+						</parameter>
+						<parameter name="file_name" isRequired="true" style="QUERYSTRING_PARAM">
+							<description>File name for the attachment</description>
+						</parameter>
+						<parameter name="encryption_context" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>Encryption context to be used if file to be saved encrypted</description>
+						</parameter>
+					 </parameters>
+					 
+					 <request name="uploadRequest" messageFormatterType="vnd.sag.cloudstreams+binary" builderType="vnd.sag.cloudstreams+binary" />
+					 
+					 <responses>
+						<response name="uploadResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.attachment:uploadResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+				
+				<!-- Retrieve Attachment Content -->
+				<resource method="GET" path="/api/now/attachment/{sys_id}/file" name="retrieveAttachmentContent" displayName="Retrieve Attachment Content">
+					 <description>Gets the binary file attachment with a specific sys_id value.</description>
+				    <lookups>       
+						<lookup name="sys_id" ref="wmservicenow.orlando.fieldLookup.attachment:listAllAttachmentIDs" type="optionsList">  
+						</lookup>				      						
+					</lookups>
+					<mappings>
+						<map isRequired="true" isFixed="true" context="IN" name="Request-Format_Mapping" displayName="Request-Format_Mapping">
+							<source type="LITERAL">application/json</source>
+							<target type="HEADER">Request format</target>
+						</map>
+						<map isRequired="true" isFixed="true" context="IN" name="Response-Format_Mapping" displayName="Response-Format_Mapping">
+							<source type="LITERAL">*/*</source>
+							<target type="HEADER">Response format</target>
+						</map>
+						<map context="IN" isRequired="true" isFixed="true" displayName="sys_id" name="sys_id">
+							<description>Look up for sys_id</description>
+							<source type="LOOKUP">sys_id</source>
+							<target type="PARAMETER">sys_id</target>
+						</map>
+					</mappings>
+					 <parameters>
+						<parameter name="sys_id" isRequired="true" style="URI_CONTEXT">
+							<description>Unique UUID of attachment whose content has to be Retrieved</description>
+						</parameter>
+					 </parameters>
+					 <responses>
+						<response name="retrieveResponse" code="200-501" messageFormatterType="vnd.sag.cloudstreams+binary" builderType="vnd.sag.cloudstreams+binary" excludeRoot="true"/>
+					 </responses>
+				</resource>
+				
+				<!-- Uploads Multipart File -->
+				<resource method="POST" path="/api/now/attachment/upload" name="uploadsMultipartFile" displayName="Uploads Multipart File">
+					 <description>Uploads a multipart file.</description>
+					<mappings>
+						<map isRequired="true" isFixed="true" context="IN" name="Content-Type_Mapping" displayName="Content-Type_Mapping">
+							<source type="LITERAL">multipart/form-data</source>
+							<target type="HEADER">Content-Type</target>
+						</map>
+						<map isRequired="true" isFixed="false" context="OUT" name="Location" displayName="Location">
+								<source type="LITERAL"></source>
+								<target type="HEADER">Location</target>
+						</map>
+					</mappings>
+					<request name="uploadMultipartFileRequest" messageFormatterType="multipart/form-data" builderType="application/octet+idataoref">
+						<parts>                                                                                                           
+							<part name ="table_name"  contentType ="text/plain" type="TEXT" partRoot="fileRoot1" defaultValue="" isRequired="true"/>
+							<part name ="table_sys_id" contentType ="text/plain" type="TEXT" partRoot="fileRoot2" defaultValue="" isRequired="true"/>
+							<part name ="uploadFile" contentType ="" type="FILE" partRoot="fileRoot3" defaultValue="" isRequired="true"/>
+                        </parts>
+					</request>					
+					 <responses>
+						<response name="uploadMultipartFileResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.attachment:uploadMultipartFileResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+			</resources>
+		
+		</service>
+		
+	<!-- Customer Service Management -->	
+	<service xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="RESTServiceType" endpoint="${cn.providerUrl}" name="Customer Service Management" displayName="Customer Service Management API">
+
+			<documentModel packageName="WmServiceNowProvider" nsName="wmservicenow.orlando.doctypes.customerServiceManagement" useInlineModel="false" />			
+			<resources>			
+				<!-- Get Account -->
+				<resource method="GET" path="/api/now/account/{sys_id}" name="getAccount" displayName="Get Account">
+					 <description>Retrieves the specified CSM account.</description>
+				<lookups>       
+					<lookup name="sys_id" ref="wmservicenow.orlando.fieldLookup.customerServiceManagement:listAccountIDs" type="optionsList">  
+					</lookup>				      						
+				</lookups>
+				<mappings>
+					<map context="IN" isRequired="true" isFixed="true" displayName="sys_id" name="sys_id">
+							<description>Look up for sys_id</description>
+							<source type="LOOKUP">sys_id</source>
+							<target type="PARAMETER">sys_id</target>
+					</map>
+				</mappings>	   
+					 <parameters>
+						<parameter name="sys_id" isRequired="true" style="URI_CONTEXT">
+							<description>sys_id of the account</description>
+						</parameter>
+					 </parameters>	
+					 
+					 <responses>
+						<response name="getAccountResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.customerServiceManagement:getAccountResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					 </responses>
+				</resource>
+				<!-- List Account -->
+				<resource method="GET" path="/api/now/account" name="listAccount" displayName="List Account">
+					 <description>Retrieves a specified set of CSM accounts.</description>
+					 
+					<mappings>
+						<map isRequired="true" isFixed="false" context="OUT" name="TotalCount" displayName="Total Count">
+							<source type="LITERAL"></source>
+							<target type="HEADER">X-Total-Count</target>
+						</map>
+						<map isRequired="true" isFixed="false" context="OUT" name="Link" displayName="Link">
+							<source type="LITERAL"></source>
+							<target type="HEADER">Link</target>
+						</map>
+					</mappings>
+					
+                    <parameters>						
+						<parameter name="sysparm_limit" isRequired="true" style="QUERYSTRING_PARAM" defaultValue="10">
+							<description>Specify the number of entities in the response.</description>
+						</parameter>						
+						<parameter name="sysparm_offset" isRequired="true" style="QUERYSTRING_PARAM" defaultValue="0">
+							<description>Specify the offset used for pagination.</description>
+						</parameter>
+						<parameter name="sysparm_query" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>An encoded query string used to filter the results.</description>
+						</parameter>
+					 </parameters>	
+					 
+					<responses>
+						<response name="listAccountResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.customerServiceManagement:listAccountResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					</responses>
+				</resource>
+				<!-- List Account Ext -->
+				<resource method="GET" path="/api/now/account" isHidden="true" name="listAccountExt" displayName="List Account Ext">
+					 <description>Retrieves a specified set of CSM accounts.</description>
+					 
+					<mappings>
+						<map isRequired="true" isFixed="false" context="OUT" name="TotalCount" displayName="Total Count">
+							<source type="LITERAL"></source>
+							<target type="HEADER">X-Total-Count</target>
+						</map>
+						<map isRequired="true" isFixed="false" context="OUT" name="Link" displayName="Link">
+							<source type="LITERAL"></source>
+							<target type="HEADER">Link</target>
+						</map>
+					</mappings>
+					
+                    <parameters>						
+						<parameter name="sysparm_limit" isRequired="true" style="QUERYSTRING_PARAM" defaultValue="10">
+							<description>Specify the number of entities in the response.</description>
+						</parameter>						
+						<parameter name="sysparm_offset" isRequired="true" style="QUERYSTRING_PARAM" defaultValue="0">
+							<description>Specify the offset used for pagination.</description>
+						</parameter>
+						<parameter name="sysparm_query" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>An encoded query string used to filter the results.</description>
+						</parameter>
+					 </parameters>	
+					 
+					<responses>
+						<response name="listAccountResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.customerServiceManagement:listAccountResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					</responses>
+				</resource>
+				<!-- Get Case -->
+				<resource method="GET" path="/api/sn_customerservice/case/{sys_id}" name="getCase" displayName="Get Case">
+					 <description>Retrieves the specified CSM case.</description>
+					<lookups>       
+						<lookup name="sys_id" ref="wmservicenow.orlando.fieldLookup.customerServiceManagement:listCasesIDs" type="optionsList">  
+					</lookup>				      						
+					</lookups>
+					<mappings>
+					<map context="IN" isRequired="true" isFixed="true" displayName="sys_id" name="sys_id">
+							<description>Look up for sys_id</description>
+							<source type="LOOKUP">sys_id</source>
+							<target type="PARAMETER">sys_id</target>
+						</map>
+					</mappings>
+                    <parameters>
+						<parameter name="sys_id" isRequired="true" style="URI_CONTEXT">
+							<description>sys_id of the case</description>
+						</parameter>
+					 </parameters>
+					 
+					<responses>
+						<response name="getCaseResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.customerServiceManagement:getCaseResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					</responses>
+				</resource>
+				<!-- List Case -->
+				<resource method="GET" path="/api/sn_customerservice/case" name="listCase" displayName="List Case">
+					 <description>Retrieves a specified set of CSM cases.</description>
+					 
+					 <mappings>
+						<map isRequired="true" isFixed="false" context="OUT" name="TotalCount" displayName="Total Count">
+							<source type="LITERAL"></source>
+							<target type="HEADER">X-Total-Count</target>
+						</map>
+						<map isRequired="true" isFixed="false" context="OUT" name="Link" displayName="Link">
+							<source type="LITERAL"></source>
+							<target type="HEADER">Link</target>
+						</map>
+					</mappings>
+					
+                    <parameters>						
+						<parameter name="sysparm_limit" isRequired="true" style="QUERYSTRING_PARAM" defaultValue="10">
+							<description>Specify the number of entities in the response.</description>
+						</parameter>						
+						<parameter name="sysparm_offset" isRequired="true" style="QUERYSTRING_PARAM" defaultValue="0">
+							<description>Specify the offset used for pagination.</description>
+						</parameter>
+						<parameter name="sysparm_query" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>An encoded query string used to filter the results.</description>
+						</parameter>
+					 </parameters>	
+					 
+					<responses>
+						<response name="listCaseResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.customerServiceManagement:listCaseResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					</responses>
+				</resource>	
+				
+				<!-- List Case Ext-->
+				<resource method="GET" path="/api/sn_customerservice/case" isHidden="true" name="listCaseExt" displayName="List Case Ext">
+					 <description>Retrieves a specified set of CSM cases.</description>
+					 
+					 <mappings>
+						<map isRequired="true" isFixed="false" context="OUT" name="TotalCount" displayName="Total Count">
+							<source type="LITERAL"></source>
+							<target type="HEADER">X-Total-Count</target>
+						</map>
+						<map isRequired="true" isFixed="false" context="OUT" name="Link" displayName="Link">
+							<source type="LITERAL"></source>
+							<target type="HEADER">Link</target>
+						</map>
+					</mappings>
+					
+                    <parameters>						
+						<parameter name="sysparm_limit" isRequired="true" style="QUERYSTRING_PARAM" defaultValue="10">
+							<description>Specify the number of entities in the response.</description>
+						</parameter>						
+						<parameter name="sysparm_offset" isRequired="true" style="QUERYSTRING_PARAM" defaultValue="0">
+							<description>Specify the offset used for pagination.</description>
+						</parameter>
+						<parameter name="sysparm_query" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>An encoded query string used to filter the results.</description>
+						</parameter>
+					 </parameters>	
+					 
+					<responses>
+						<response name="listCaseResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.customerServiceManagement:listCaseResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					</responses>
+				</resource>
+                <!-- Get Consumer -->				
+				<resource method="GET" path="/api/now/consumer/{sys_id}" name="getConsumer" displayName="Get Consumer">
+					 <description>Retrieves the specified CSM consumer record.</description>
+				<lookups>       
+						<lookup name="sys_id" ref="wmservicenow.orlando.fieldLookup.customerServiceManagement:listConsumerIDs" type="optionsList">  
+				        </lookup>				      						
+				</lookups>
+				<mappings>
+					<map context="IN" isRequired="true" isFixed="true" displayName="sys_id" name="sys_id">
+							<description>Look up for sys_id</description>
+							<source type="LOOKUP">sys_id</source>
+							<target type="PARAMETER">sys_id</target>
+					</map>
+				</mappings>	 
+                    <parameters>
+						<parameter name="sys_id" isRequired="true" style="URI_CONTEXT">
+							<description>sys_id of the consumer</description>
+						</parameter>
+					 </parameters>
+					 
+					<responses>
+						<response name="getConsumerResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.customerServiceManagement:getConsumerResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					</responses>
+				</resource>
+				<!-- List Consumer -->
+				<resource method="GET" path="/api/now/consumer" name="listConsumer" displayName="List Consumer">
+					 <description>Retrieves a specified set of CSM consumer records.</description>
+					 
+					 <mappings>
+						<map isRequired="true" isFixed="false" context="OUT" name="TotalCount" displayName="Total Count">
+							<source type="LITERAL"></source>
+							<target type="HEADER">X-Total-Count</target>
+						</map>
+						<map isRequired="true" isFixed="false" context="OUT" name="Link" displayName="Link">
+							<source type="LITERAL"></source>
+							<target type="HEADER">Link</target>
+						</map>
+					</mappings>
+					
+                    <parameters>						
+						<parameter name="sysparm_limit" isRequired="true" style="QUERYSTRING_PARAM" defaultValue="10">
+							<description>Specify the number of entities in the response.</description>
+						</parameter>						
+						<parameter name="sysparm_offset" isRequired="true" style="QUERYSTRING_PARAM" defaultValue="0">
+							<description>Specify the offset used for pagination.</description>
+						</parameter>
+						<parameter name="sysparm_query" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>An encoded query string used to filter the results.</description>
+						</parameter>
+					 </parameters>	
+					 
+					<responses>
+						<response name="listConsumerResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.customerServiceManagement:listConsumerResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					</responses>
+				</resource>
+                
+				<!-- List Consumer Ext -->
+                <resource method="GET" path="/api/now/consumer" isHidden="true" name="listConsumerExt" displayName="List Consumer Ext">
+					 <description>Retrieves a specified set of CSM consumer records.</description>
+					 
+					 <mappings>
+						<map isRequired="true" isFixed="false" context="OUT" name="TotalCount" displayName="Total Count">
+							<source type="LITERAL"></source>
+							<target type="HEADER">X-Total-Count</target>
+						</map>
+						<map isRequired="true" isFixed="false" context="OUT" name="Link" displayName="Link">
+							<source type="LITERAL"></source>
+							<target type="HEADER">Link</target>
+						</map>
+					</mappings>
+					
+                    <parameters>						
+						<parameter name="sysparm_limit" isRequired="true" style="QUERYSTRING_PARAM" defaultValue="10">
+							<description>Specify the number of entities in the response.</description>
+						</parameter>						
+						<parameter name="sysparm_offset" isRequired="true" style="QUERYSTRING_PARAM" defaultValue="0">
+							<description>Specify the offset used for pagination.</description>
+						</parameter>
+						<parameter name="sysparm_query" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>An encoded query string used to filter the results.</description>
+						</parameter>
+					 </parameters>	
+					 
+					<responses>
+						<response name="listConsumerResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.customerServiceManagement:listConsumerResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					</responses>
+				</resource>					
+				<!-- Get Contact -->
+				<resource method="GET" path="/api/now/contact/{sys_id}" name="getContact" displayName="Get Contact">
+					 <description>Retrieves the specified CSM contact.</description>
+		        <lookups>       
+						<lookup name="sys_id" ref="wmservicenow.orlando.fieldLookup.customerServiceManagement:listContactIDs" type="optionsList">  
+					</lookup>				      						
+				</lookups>
+					<mappings>
+					<map context="IN" isRequired="true" isFixed="true" displayName="sys_id" name="sys_id">
+							<description>Look up for sys_id</description>
+							<source type="LOOKUP">sys_id</source>
+							<target type="PARAMETER">sys_id</target>
+						</map>
+					</mappings>
+                    <parameters>
+						<parameter name="sys_id" isRequired="true" style="URI_CONTEXT">
+							<description>sys_id of the contact</description>
+						</parameter>
+					 </parameters>
+					 
+					<responses>
+						<response name="getContactResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.customerServiceManagement:getContactResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					</responses>
+				</resource>
+				<!-- List Contact -->
+				<resource method="GET" path="/api/now/contact" name="listContact" displayName="List Contact">
+					 <description>Retrieves a specified set of CSM contacts.</description>
+					 
+					 <mappings>
+						<map isRequired="true" isFixed="false" context="OUT" name="TotalCount" displayName="Total Count">
+							<source type="LITERAL"></source>
+							<target type="HEADER">X-Total-Count</target>
+						</map>
+						<map isRequired="true" isFixed="false" context="OUT" name="Link" displayName="Link">
+							<source type="LITERAL"></source>
+							<target type="HEADER">Link</target>
+						</map>
+					</mappings>
+					
+                    <parameters>						
+						<parameter name="sysparm_limit" isRequired="true" style="QUERYSTRING_PARAM" defaultValue="10">
+							<description>Specify the number of entities in the response.</description>
+						</parameter>						
+						<parameter name="sysparm_offset" isRequired="true" style="QUERYSTRING_PARAM" defaultValue="0">
+							<description>Specify the offset used for pagination.</description>
+						</parameter>
+						<parameter name="sysparm_query" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>An encoded query string used to filter the results.</description>
+						</parameter>
+					 </parameters>	
+					 
+					<responses>
+						<response name="listContactResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.customerServiceManagement:listContactResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					</responses>
+				</resource>
+
+                <!-- List Contact Ext -->
+				<resource method="GET" path="/api/now/contact" isHidden="true" name="listContactExt" displayName="List Contact Ext">
+					 <description>Retrieves a specified set of CSM contacts.</description>
+					 
+					 <mappings>
+						<map isRequired="true" isFixed="false" context="OUT" name="TotalCount" displayName="Total Count">
+							<source type="LITERAL"></source>
+							<target type="HEADER">X-Total-Count</target>
+						</map>
+						<map isRequired="true" isFixed="false" context="OUT" name="Link" displayName="Link">
+							<source type="LITERAL"></source>
+							<target type="HEADER">Link</target>
+						</map>
+					</mappings>
+					
+                    <parameters>						
+						<parameter name="sysparm_limit" isRequired="true" style="QUERYSTRING_PARAM" defaultValue="10">
+							<description>Specify the number of entities in the response.</description>
+						</parameter>						
+						<parameter name="sysparm_offset" isRequired="true" style="QUERYSTRING_PARAM" defaultValue="0">
+							<description>Specify the offset used for pagination.</description>
+						</parameter>
+						<parameter name="sysparm_query" isRequired="false" style="QUERYSTRING_PARAM">
+							<description>An encoded query string used to filter the results.</description>
+						</parameter>
+					 </parameters>	
+					 
+					<responses>
+						<response name="listContactResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.customerServiceManagement:listContactResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					</responses>
+				</resource>					
+				<!-- Create Case -->
+				<resource method="POST" path="/api/sn_customerservice/case" name="createCase" displayName="Create Case">
+					<description>Creates a new CSM case.</description>
+					 
+					<mappings>
+						<map isRequired="true" isFixed="true" context="IN" name="Content-Type_Mapping" displayName="Content-Type_Mapping">
+							<source type="LITERAL">application/json</source>
+							<target type="HEADER">Content-Type</target>
+						</map>
+					</mappings>
+					  
+					<request name="createCaseRequest" messageFormatterType="application/json" builderType="application/octet+idataoref" documentRef="wmservicenow.orlando.doctypes.customerServiceManagement:createCaseRequest" excludeRoot="true"/>
+					 
+					<responses>
+						<response name="createCaseResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.customerServiceManagement:createCaseResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					</responses>
+				</resource> 
+				<!--Create Consumer -->
+				<resource method="POST" path="/api/now/consumer" name="createConsumer" displayName="Create Consumer">
+					<description>Creates a new CSM Consumer.</description>
+					 
+					<mappings>
+						<map isRequired="true" isFixed="true" context="IN" name="Content-Type_Mapping" displayName="Content-Type_Mapping">
+							<source type="LITERAL">application/json</source>
+							<target type="HEADER">Content-Type</target>
+						</map>
+					</mappings>
+					  
+					<request name="createConsumerRequest" messageFormatterType="application/json" builderType="application/octet+idataoref" documentRef="wmservicenow.orlando.doctypes.customerServiceManagement:createConsumerRequest" excludeRoot="true"/>
+					 
+					<responses>
+						<response name="createConsumerResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.customerServiceManagement:createConsumerResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					</responses>
+				</resource>
+				<!-- Create Contact -->
+				<resource method="POST" path="/api/now/contact" name="createContact" displayName="Create Contact">
+					<description>Creates a new CSM Contact.</description>
+					 
+					<mappings>
+						<map isRequired="true" isFixed="true" context="IN" name="Content-Type_Mapping" displayName="Content-Type_Mapping">
+							<source type="LITERAL">application/json</source>
+							<target type="HEADER">Content-Type</target>
+						</map>
+					</mappings>
+					  
+					<request name="createContactRequest" messageFormatterType="application/json" builderType="application/octet+idataoref" documentRef="wmservicenow.orlando.doctypes.customerServiceManagement:createContactRequest" excludeRoot="true"/>
+					 
+					<responses>
+						<response name="createContactResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.customerServiceManagement:createContactResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					</responses>
+				</resource> 
+				<!--Update Case -->
+				<resource method="PUT" path="/api/sn_customerservice/case/{sys_id}" name="updateCase" displayName="Update Case">
+					<description>Updates the specified existing CSM case.</description>
+					<lookups>       
+						<lookup name="sys_id" ref="wmservicenow.orlando.fieldLookup.customerServiceManagement:listCasesIDs" type="optionsList">  
+					</lookup>				      						
+					</lookups>
+
+					<mappings>
+						<map isRequired="true" isFixed="true" context="IN" name="Content-Type_Mapping" displayName="Content-Type_Mapping">
+							<source type="LITERAL">application/json</source>
+							<target type="HEADER">Content-Type</target>
+						</map>
+						<map context="IN" isRequired="true" isFixed="true" displayName="sys_id" name="sys_id">
+							<description>Look up for sys_id</description>
+							<source type="LOOKUP">sys_id</source>
+							<target type="PARAMETER">sys_id</target>
+						</map>
+					</mappings>
+					  
+					<parameters>
+						<parameter name="sys_id" isRequired="true" style="URI_CONTEXT">
+							<description>sys_id of the case</description>
+						</parameter>
+					 </parameters>
+					<request name="updateCaseRequest" messageFormatterType="application/json" builderType="application/octet+idataoref" documentRef="wmservicenow.orlando.doctypes.customerServiceManagement:updateCaseRequest" excludeRoot="true"/>
+					 
+					<responses>
+						<response name="updateCaseResponse" code="200-206" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.customerServiceManagement:updateCaseResponse" excludeRoot="true"/>
+						<response name="errorResponse" code="400-501" messageFormatterType="application/octet+idataoref" builderType="application/json" documentRef="wmservicenow.orlando.doctypes.table:errorResponse" excludeRoot="true"/>
+					</responses>
+				</resource> 
+	         </resources>	
+	
+	</service>
+	
+    </services>
+</rest-connector>
